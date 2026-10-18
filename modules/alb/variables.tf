@@ -18,8 +18,19 @@ variable "subnet_ids" {
   type        = list(string)
 }
 
+variable "certificate_arn" {
+  description = "ACM certificate of the domain (envs/foundation). The load balancer serves HTTPS with it; port 80 only redirects to HTTPS."
+  type        = string
+}
+
+variable "ssl_policy" {
+  description = "TLS policy of the HTTPS listener (TLS 1.2 and 1.3)."
+  type        = string
+  default     = "ELBSecurityPolicy-TLS13-1-2-2021-06"
+}
+
 variable "allowed_cidrs" {
-  description = "CIDRs allowed to reach the load balancer on port 80 (your own address, /32). There is no TLS without a domain, so do not open it to the world."
+  description = "CIDRs allowed to reach the load balancer on ports 80 and 443 (your own address, /32)."
   type        = list(string)
 
   validation {

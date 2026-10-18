@@ -4,7 +4,7 @@ The requirement: every AWS resource must be managed by Terraform, so nobody has 
 `Gateway` on EKS normally makes a *controller* create a load balancer. Here it does not, by design:
 
 ```text
-Terraform:   ALB :80  ->  target group (instances, :8080)  ->  Auto Scaling group of the nodes     (security group rules included)
+Terraform:   ALB :443 (TLS ends here, ACM certificate; :80 redirects)  ->  target group (instances, :8080)  ->  Auto Scaling group of the nodes     (security group rules included)
 Kubernetes:  Cilium Envoy listens on :8080 on every node (hostNetwork)  ->  Gateway / HTTPRoute  ->  Services
 ```
 
@@ -22,15 +22,17 @@ have; each Gateway needs its own port). In the Helm repository's `platform-gatew
 The target group's health check accepts any answer below 500 (Envoy answers 404 where no route matches). Until a Gateway exists nothing
 listens on 8080, the targets are unhealthy and the ALB answers `503`.
 
-## Limits of "no domain"
+## Domain and TLS
 
-- The ALB serves **HTTP only** on port 80 (an ACM certificate needs a domain), and only to `alb_allowed_cidrs`.
-- The platform's routes are **host-based** (`argocd.<domain>`, `backstage.<domain>` ...). Reaching them through the ALB's own DNS name
-  does not match any route. Until there is a domain: map the host names to the ALB's addresses in your hosts file
-  (`dig +short <alb dns name>`; the addresses change occasionally), or send the `Host` header yourself. With a domain it is one
-  Route53 record per name (or a wildcard) pointing at the ALB.
-- The `platform-gateway` chart always renders an HTTPS listener with a certificate Secret. Without TLS that listener has to be optional
-  for this environment.
+- The ALB serves **HTTPS** on 443 with the ACM certificate for `platform-demo.click` and `*.platform-demo.click` (`envs/foundation`); port 80 only
+  redirects to HTTPS. Both ports admit only `alb_allowed_cidrs`. TLS ends at the ALB; from there to the nodes it is plain HTTP inside the VPC,
+  so the Cilium Gateway needs only an **HTTP** listener on `gateway_port` (no certificate Secret in the cluster).
+- Every UI has a host name (`argocd.`, `backstage.`, `grafana.`, `dex.`, `hubble.`, `shop.platform-demo.click`): an alias record in the
+  domain's hosted zone pointing at the ALB (`modules/dns`). The platform's routes are host-based, so they match.
+- The hosted zone and the certificate are looked up, never created by the platform stack, so `terraform destroy` of the platform leaves
+  the domain, the zone ($0.50 a month) and the certificate (free) alone.
+- The `platform-gateway` chart still always renders an HTTPS listener with a certificate Secret; for this environment that listener
+  has to be optional (TLS is the ALB's job).
 
 ## Guarding against load balancers made behind Terraform's back
 

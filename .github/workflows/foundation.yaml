@@ -1,0 +1,36 @@
+name: Foundation
+
+# Creates what outlives the platform: the TLS certificate for the domain (free, validated through DNS in the domain's hosted zone).
+# Run it once after registering the domain and after Bootstrap, before the first Deploy. The Destroy workflow never touches it.
+# Like Deploy: a Plan job shows what would be created, then the Apply job waits for YOUR approval on the "production" environment.
+run-name: "Foundation: ${{ inputs.reason }}"
+
+on:
+  workflow_dispatch:
+    inputs:
+      reason:
+        description: Why are you applying the foundation? (shown with the plan where you approve it)
+        type: string
+        required: true
+
+permissions: {}
+
+concurrency:
+  group: terraform-foundation
+  cancel-in-progress: false
+
+jobs:
+  apply:
+    permissions:
+      contents: read
+      id-token: write
+    uses: platform-boutique/platform-demo-workflows/.github/workflows/terraform-apply.yaml@92fc15988807025a9261209e37d3546ad8e9d757 # v2.1.0
+    with:
+      working_directory: envs/foundation
+      state_bucket: ${{ vars.TF_STATE_BUCKET }}
+      tf_vars: '{"domain_name":"${{ vars.DOMAIN_NAME }}"}'
+      reason: ${{ inputs.reason }}
+      environment: production
+    secrets:
+      AWS_ACCESS_KEY_ID: ${{ secrets.AWS_ACCESS_KEY_ID }}
+      AWS_SECRET_ACCESS_KEY: ${{ secrets.AWS_SECRET_ACCESS_KEY }}

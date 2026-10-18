@@ -1,16 +1,10 @@
 # Accepted Trivy findings. Each has a written reason; everything else at HIGH or CRITICAL fails the pipeline.
 misconfigurations:
-  - id: AVD-AWS-0054
-    paths:
-      - modules/alb/main.tf
-    statement: >-
-      The ALB listens on HTTP: there is no domain yet, so no ACM certificate and no HTTPS listener. It admits only allowed_cidrs
-      (the maintainer's address). Add an HTTPS listener and a redirect together with the domain.
   - id: AVD-AWS-0053
     paths:
       - modules/alb/main.tf
     statement: >-
-      The ALB is internet-facing by design (it is the platform's front door) but its security group admits only allowed_cidrs.
+      The ALB is internet-facing by design (it is the platform's front door: HTTPS, with port 80 redirecting) but its security group admits only allowed_cidrs.
   - id: AVD-AWS-0040
     statement: >-
       The EKS API endpoint is public so that Terraform (a laptop or a GitHub runner) can reach it; it is restricted to public_access_cidrs,

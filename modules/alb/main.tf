@@ -1,6 +1,6 @@
 # The platform's front door, owned by Terraform.
 #
-#   internet --80--> ALB (public subnets) --gateway_port--> every node (Cilium Envoy, hostNetwork) --> HTTPRoutes --> Services
+#   internet --443 (80 redirects)--> ALB (public subnets, TLS ends here) --gateway_port--> every node (Cilium Envoy, hostNetwork) --> HTTPRoutes --> Services
 #
 # Nothing in Kubernetes creates or changes anything here. The Gateway only has to listen on gateway_port (a fixed number), so no
 # controller creates load balancers, target groups or security group rules behind Terraform's back, and `terraform destroy`
@@ -25,10 +25,21 @@ resource "aws_vpc_security_group_ingress_rule" "http" {
   for_each = toset(var.allowed_cidrs)
 
   security_group_id = aws_security_group.alb.id
-  description       = "HTTP from ${each.value}"
+  description       = "HTTP (redirected to HTTPS) from ${each.value}"
   cidr_ipv4         = each.value
   from_port         = 80
   to_port           = 80
+  ip_protocol       = "tcp"
+}
+
+resource "aws_vpc_security_group_ingress_rule" "https" {
+  for_each = toset(var.allowed_cidrs)
+
+  security_group_id = aws_security_group.alb.id
+  description       = "HTTPS from ${each.value}"
+  cidr_ipv4         = each.value
+  from_port         = 443
+  to_port           = 443
   ip_protocol       = "tcp"
 }
 
@@ -54,7 +65,6 @@ resource "aws_vpc_security_group_ingress_rule" "nodes_from_alb" {
 resource "aws_lb" "this" {
   #checkov:skip=CKV_AWS_91:No access-log bucket in this test environment (it would be one more resource to keep and destroy); add one with the domain and a long-lived platform.
   #checkov:skip=CKV_AWS_150:Created and destroyed on demand to save cost; deletion_protection is a variable to switch on once the platform is long-lived.
-  #checkov:skip=CKV2_AWS_20:No HTTPS without a domain (an ACM certificate needs one), so there is nothing to redirect to yet.
   #checkov:skip=CKV2_AWS_28:Reachable only from allowed_cidrs (the maintainer's address); a WAF is not worth its cost in a test environment.
   name               = var.name
   load_balancer_type = "application"
@@ -71,7 +81,7 @@ resource "aws_lb" "this" {
 }
 
 resource "aws_lb_target_group" "gateway" {
-  #checkov:skip=CKV_AWS_378:HTTP between the ALB and the nodes inside the VPC; the ALB's own HTTPS listener comes with a domain.
+  #checkov:skip=CKV_AWS_378:HTTP between the ALB and the nodes inside the VPC: TLS ends at the ALB, and the Cilium Gateway listens on plain HTTP.
   name        = "${var.name}-gw"
   vpc_id      = var.vpc_id
   target_type = "instance"
@@ -96,12 +106,31 @@ resource "aws_lb_target_group" "gateway" {
   tags = var.tags
 }
 
+# Port 80 only redirects: nothing is served in clear text.
 resource "aws_lb_listener" "http" {
-  #checkov:skip=CKV_AWS_2:No domain, so no ACM certificate, so HTTP only; reachable from allowed_cidrs (the maintainer's address) only.
-  #checkov:skip=CKV_AWS_103:Applies to HTTPS listeners; this one is HTTP until there is a domain.
   load_balancer_arn = aws_lb.this.arn
   port              = 80
   protocol          = "HTTP"
+
+  default_action {
+    type = "redirect"
+
+    redirect {
+      port        = "443"
+      protocol    = "HTTPS"
+      status_code = "HTTP_301"
+    }
+  }
+
+  tags = var.tags
+}
+
+resource "aws_lb_listener" "https" {
+  load_balancer_arn = aws_lb.this.arn
+  port              = 443
+  protocol          = "HTTPS"
+  ssl_policy        = var.ssl_policy
+  certificate_arn   = var.certificate_arn
 
   default_action {
     type             = "forward"

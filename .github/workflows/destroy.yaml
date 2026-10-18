@@ -39,7 +39,7 @@ jobs:
       expected_confirmation: destroy platform-demo
       working_directory: envs/platform
       state_bucket: ${{ vars.TF_STATE_BUCKET }}
-      tf_vars: '{"api_allowed_cidrs":${{ vars.API_ALLOWED_CIDRS }},"alb_allowed_cidrs":${{ vars.ALB_ALLOWED_CIDRS }}}'
+      tf_vars: '{"domain_name":"${{ vars.DOMAIN_NAME }}","api_allowed_cidrs":${{ vars.API_ALLOWED_CIDRS }},"alb_allowed_cidrs":${{ vars.ALB_ALLOWED_CIDRS }}}'
       runner_ip_variable: api_allowed_cidrs
       cluster_name: platform-demo
       delete_leftover_volumes: ${{ inputs.delete_leftover_volumes }}

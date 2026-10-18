@@ -60,11 +60,25 @@ module "eks_nodes" {
   depends_on = [module.cilium]
 }
 
-# 4. The front door: an ALB in the public subnets forwarding to the Gateway's port on the nodes.
+# The domain's hosted zone (created by AWS when the domain was registered) and its certificate (envs/foundation): looked up, never created,
+# so a destroy of the platform cannot remove them.
+data "aws_route53_zone" "this" {
+  name         = var.domain_name
+  private_zone = false
+}
+
+data "aws_acm_certificate" "this" {
+  domain      = var.domain_name
+  statuses    = ["ISSUED"]
+  most_recent = true
+}
+
+# 4. The front door: an ALB in the public subnets, serving HTTPS with that certificate and forwarding to the Gateway's port on the nodes.
 module "alb" {
   source = "../../modules/alb"
 
   name                    = var.name
+  certificate_arn         = data.aws_acm_certificate.this.arn
   vpc_id                  = module.network.vpc_id
   subnet_ids              = module.network.public_subnet_ids
   allowed_cidrs           = var.alb_allowed_cidrs
@@ -73,7 +87,7 @@ module "alb" {
   autoscaling_group_names = module.eks_nodes.autoscaling_group_names
 }
 
-# 5. Read access to the platform's secrets in Parameter Store for the External Secrets Operator (installed later through GitOps).
+# 6. Read access to the platform's secrets in Parameter Store for the External Secrets Operator (installed later through GitOps).
 module "secrets_access" {
   source = "../../modules/secrets-access"
 
@@ -81,4 +95,15 @@ module "secrets_access" {
   oidc_provider_arn = module.eks_cluster.oidc_provider_arn
   oidc_provider     = module.eks_cluster.oidc_provider
   parameter_prefix  = var.secrets_parameter_prefix
+}
+
+# 5. The host names of the platform's UIs, all pointing at the ALB.
+module "dns" {
+  source = "../../modules/dns"
+
+  zone_id      = data.aws_route53_zone.this.zone_id
+  domain_name  = var.domain_name
+  hostnames    = var.hostnames
+  alb_dns_name = module.alb.dns_name
+  alb_zone_id  = module.alb.zone_id
 }
