@@ -22,6 +22,13 @@ artifact, because artifacts of a public repository are public and a plan file ca
 The plan id is passed between the jobs of the run. The Apply job re-checks the checksum after your approval and runs `terraform apply` on that file; Terraform itself rejects a plan whose
 state changed in the meantime.
 
+## What you see before you approve
+
+The Review job's run page shows, in this order: your reason, **At a glance** (totals, anything **destroyed or replaced** listed first,
+which settings change on updates; computed by script from the plan), and every change. If the optional `ANTHROPIC_API_KEY` secret exists,
+a separate advisory job also asks a small Claude model (Haiku) to explain the summary in plain words. It sees resource names and counts
+only, never values, and the apply job does not wait for it. It can be wrong: approve from the list of changes, not from that text.
+
 ## Who may do what
 
 | Role | Who can assume it | Can do |
@@ -35,7 +42,8 @@ The environments need a required reviewer and deploy only from `main`. Both role
 
 - **Variables** (Settings -> Secrets and variables -> Actions -> Variables): `TF_STATE_BUCKET`, `AWS_PLAN_ROLE_ARN`, `AWS_APPLY_ROLE_ARN` (all printed by
   `scripts/bootstrap.sh`) and `ALB_ALLOWED_CIDRS` (JSON list with your address, for example `["203.0.113.7/32"]`).
-- **Secret (optional):** `INFRACOST_API_KEY` (free at infracost.io; without it the cost job is skipped).
+- **Secrets (optional):** `INFRACOST_API_KEY` (free at infracost.io; without it the cost job is skipped) and `ANTHROPIC_API_KEY` (an Anthropic
+  Console key; costs a fraction of a cent per run; without it the AI explanation is skipped).
 - **Environments:** `production` and `destruction`, each with a required reviewer and only `main` allowed.
 
 ## Accepted risks

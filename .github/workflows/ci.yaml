@@ -31,7 +31,7 @@ jobs:
       contents: read
       pull-requests: write
       id-token: write
-    uses: platform-boutique/platform-demo-workflows/.github/workflows/terraform-ci.yaml@d0080e585b5f826f3b1755e3314256bb81a22b9a # feat/terraform-plan-apply, becomes v3.0.0
+    uses: platform-boutique/platform-demo-workflows/.github/workflows/terraform-ci.yaml@0be7433d7f3b66d28fde5796ed0d638c18a23a69 # feat/terraform-plan-apply, becomes v3.0.0
     with:
       directories: stacks/platform stacks/foundation stacks/bootstrap
       plan_directory: stacks/platform

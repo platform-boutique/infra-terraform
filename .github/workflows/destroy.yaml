@@ -46,7 +46,7 @@ jobs:
     permissions:
       contents: read
       id-token: write
-    uses: platform-boutique/platform-demo-workflows/.github/workflows/terraform-plan.yaml@d0080e585b5f826f3b1755e3314256bb81a22b9a # feat/terraform-plan-apply, becomes v3.0.0
+    uses: platform-boutique/platform-demo-workflows/.github/workflows/terraform-plan.yaml@0be7433d7f3b66d28fde5796ed0d638c18a23a69 # feat/terraform-plan-apply, becomes v3.0.0
     with:
       working_directory: stacks/platform
       state_bucket: ${{ vars.TF_STATE_BUCKET }}
@@ -61,7 +61,7 @@ jobs:
     permissions:
       contents: read
       id-token: write
-    uses: platform-boutique/platform-demo-workflows/.github/workflows/terraform-apply.yaml@d0080e585b5f826f3b1755e3314256bb81a22b9a # feat/terraform-plan-apply, becomes v3.0.0
+    uses: platform-boutique/platform-demo-workflows/.github/workflows/terraform-apply.yaml@0be7433d7f3b66d28fde5796ed0d638c18a23a69 # feat/terraform-plan-apply, becomes v3.0.0
     with:
       working_directory: stacks/platform
       state_bucket: ${{ vars.TF_STATE_BUCKET }}
@@ -72,3 +72,5 @@ jobs:
       environment: destruction
       pre_apply_script: scripts/destroy-prepare.sh
       post_apply_script: scripts/destroy-verify.sh
+    secrets:
+      ANTHROPIC_API_KEY: ${{ secrets.ANTHROPIC_API_KEY }}
