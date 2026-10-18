@@ -1,7 +1,8 @@
 name: CI
 
-# Pull-request gate. Nothing runs on a plain push, and nothing here needs AWS credentials: it checks formatting, validates the
-# configuration without a backend and scans it for misconfigurations. Planning and applying are done by hand (README).
+# Pull-request gate. Nothing runs on a plain push. The Terraform jobs come from the shared pipeline
+# (platform-demo-workflows): fmt/validate, TFLint, Trivy, Checkov, an Infracost estimate and a plan as a pull request comment.
+# They change nothing in AWS. Accepted risks are in .trivyignore.yaml and .checkov.yaml / inline #checkov:skip, each with a reason.
 on:
   pull_request:
     branches: [main]
@@ -25,41 +26,18 @@ jobs:
     uses: platform-boutique/platform-demo-workflows/.github/workflows/workflow-lint.yaml@28d80c1d4abd81c1529bf593a874640132692e8a # v2.0.2
 
   terraform:
-    name: Terraform fmt and validate
-    runs-on: ubuntu-latest
     permissions:
       contents: read
-    steps:
-      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
-        with:
-          persist-credentials: false
-      - uses: hashicorp/setup-terraform@dfe3c3f87815947d99a8997f908cb6525fc44e9e # v4.0.1
-        with:
-          terraform_version: 1.16.6
-          terraform_wrapper: false
-      - name: Format
-        run: terraform fmt -recursive -check -diff
-      - name: Validate
-        run: |
-          for dir in bootstrap envs/platform; do
-            echo "::group::$dir"
-            terraform -chdir="$dir" init -backend=false -input=false -lockfile=readonly
-            terraform -chdir="$dir" validate
-            echo "::endgroup::"
-          done
-
-  trivy:
-    name: Trivy config scan
-    runs-on: ubuntu-latest
-    permissions:
-      contents: read
-    steps:
-      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
-        with:
-          persist-credentials: false
-      - uses: aquasecurity/trivy-action@ed142fd0673e97e23eac54620cfb913e5ce36c25 # v0.36.0
-        with:
-          scan-type: config
-          scan-ref: .
-          severity: HIGH,CRITICAL
-          exit-code: "1"
+      pull-requests: write
+      id-token: write
+    uses: platform-boutique/platform-demo-workflows/.github/workflows/terraform-ci.yaml@92fc15988807025a9261209e37d3546ad8e9d757 # v2.1.0
+    with:
+      directories: envs/platform bootstrap
+      plan_directory: envs/platform
+      cost_directory: envs/platform
+      state_bucket: ${{ vars.TF_STATE_BUCKET }}
+      tf_vars: '{"api_allowed_cidrs":${{ vars.API_ALLOWED_CIDRS }},"alb_allowed_cidrs":${{ vars.ALB_ALLOWED_CIDRS }}}'
+    secrets:
+      AWS_ACCESS_KEY_ID: ${{ secrets.AWS_ACCESS_KEY_ID }}
+      AWS_SECRET_ACCESS_KEY: ${{ secrets.AWS_SECRET_ACCESS_KEY }}
+      INFRACOST_API_KEY: ${{ secrets.INFRACOST_API_KEY }}

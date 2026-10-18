@@ -1,5 +1,12 @@
 # Operations
 
+## Credentials
+
+Terraform, the AWS CLI and the providers read the standard credential chain, so nothing in this repository holds a key: put the
+access key of the IAM user in `~/.aws/credentials` (profile `default`, or any name plus `export AWS_PROFILE=<name>`) and the region in
+`~/.aws/config`. Never put it in a `.tf`, `.tfvars` or `backend.hcl` file: the repository is public (and AWS quarantines keys it finds on GitHub).
+Prefer IAM Identity Center (SSO) over long-lived keys when the account has it; delete test keys when you are done.
+
 ## First build
 
 See the README: `bootstrap/` once (state bucket), then `envs/platform/`: `init -backend-config=backend.hcl`, `plan`, `apply`.
@@ -27,11 +34,11 @@ kubectl get svc -A | grep LoadBalancer   # must be empty
 terraform destroy
 
 # 3. Check for leftovers
-aws ec2 describe-volumes --filters Name=tag:platform-cluster,Values=platform-demo --query 'Volumes[].VolumeId'
+aws ec2 describe-volumes --filters Name=tag:ebs.csi.aws.com/cluster,Values=true --query 'Volumes[].VolumeId'
 aws elb describe-load-balancers --query 'LoadBalancerDescriptions[].LoadBalancerName'
 ```
 
-Volumes created for PersistentVolumeClaims carry the tag `platform-cluster=<name>` for exactly this check. If step 3 finds any, they were
+Volumes the EBS CSI driver creates for PersistentVolumeClaims carry the tag `ebs.csi.aws.com/cluster=true`, which is what this check looks for. If step 3 finds any, they were
 created after step 1 or by something that bypassed the guard: delete them with `aws ec2 delete-volume`.
 `bootstrap/` is never destroyed with the platform: its bucket has `prevent_destroy` and holds the state.
 

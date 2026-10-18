@@ -114,13 +114,8 @@ resource "aws_eks_addon" "ebs_csi" {
   addon_name               = "aws-ebs-csi-driver"
   service_account_role_arn = aws_iam_role.ebs_csi.arn
 
-  # Volumes the driver creates for PersistentVolumeClaims are not Terraform resources. They carry this tag so that what a destroyed
-  # cluster leaves behind can be found (docs/operations.md): aws ec2 describe-volumes --filters Name=tag:platform-cluster,Values=<name>
-  configuration_values = jsonencode({
-    controller = {
-      extraVolumeTags = { "platform-cluster" = var.cluster_name }
-    }
-  })
+  # Volumes the driver creates for PersistentVolumeClaims are not Terraform resources. The driver tags every one of them with
+  # ebs.csi.aws.com/cluster=true, which is how what a destroyed cluster leaves behind can be found (docs/operations.md).
 
   resolve_conflicts_on_create = "OVERWRITE"
   resolve_conflicts_on_update = "OVERWRITE"

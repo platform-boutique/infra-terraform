@@ -17,6 +17,7 @@ internet --:80--> ALB (public /24 subnets, 2 zones) --:8080--> nodes (private /2
 | `modules/cilium` | Gateway API CRDs and Cilium (overlay, kube-proxy replacement, Gateway API on the host network). |
 | `modules/eks-nodes` | Spot managed node group, CoreDNS and the EBS CSI driver. |
 | `modules/alb` | The ALB, its target group and the security group rules, attached to the node group. |
+| `modules/secrets-access` | Read-only IAM role for the External Secrets Operator on `/platform-demo/*` in Parameter Store. |
 | `docs/` | Architecture, the ALB/Gateway contract, operations (rendered in the developer portal). |
 
 ## What you need to provide
@@ -26,7 +27,13 @@ internet --:80--> ALB (public /24 subnets, 2 zones) --:8080--> nodes (private /2
 2. **Your public IP** (`curl -s https://checkip.amazonaws.com`) as a `/32`: it is the only address allowed to reach the Kubernetes API and the ALB.
 3. **On your machine:** `terraform` >= 1.10 (tested with 1.16.6), the **AWS CLI v2** (Terraform's Helm/kubectl providers authenticate with `aws eks get-token`), and `kubectl`.
 
-## Build it
+Credentials never go into this repository (it is public): they live in `~/.aws/credentials`, outside it (docs/operations.md). Secrets such as
+the GitHub OAuth App's are typed once into Parameter Store (docs/secrets.md).
+
+## Build it (from the pipeline, or by hand)
+
+The pipeline (`docs/pipeline.md`) does all of this from GitHub Actions: **Bootstrap** once, then **Deploy** (approval), **Destroy** when you want the cost to stop.
+By hand:
 
 ```bash
 # 1. State bucket (once)

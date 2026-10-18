@@ -4,7 +4,7 @@ A highly available platform foundation in `us-east-1`, zones `a` and `b`:
 
 - **Network:** one VPC (10.0.0.0/16), per zone one public and one private /24 subnet and one NAT gateway.
   Only the load balancer (and the NAT gateways) sit in the public subnets.
-- **Cluster:** EKS 1.35 with Cilium as an overlay network (no AWS VPC CNI, no kube-proxy), two Spot nodes with 16 GiB RAM,
+- **Cluster:** EKS 1.36 with Cilium as an overlay network (no AWS VPC CNI, no kube-proxy), two Spot nodes with 16 GiB RAM,
   CoreDNS and the EBS CSI driver.
 - **Front door:** an ALB, owned by Terraform, forwarding to the Gateway's port on the nodes.
 

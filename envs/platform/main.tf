@@ -72,3 +72,13 @@ module "alb" {
   node_security_group_id  = module.eks_cluster.node_security_group_id
   autoscaling_group_names = module.eks_nodes.autoscaling_group_names
 }
+
+# 5. Read access to the platform's secrets in Parameter Store for the External Secrets Operator (installed later through GitOps).
+module "secrets_access" {
+  source = "../../modules/secrets-access"
+
+  name              = module.eks_cluster.name
+  oidc_provider_arn = module.eks_cluster.oidc_provider_arn
+  oidc_provider     = module.eks_cluster.oidc_provider
+  parameter_prefix  = var.secrets_parameter_prefix
+}

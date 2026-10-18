@@ -1,0 +1,39 @@
+name: Deploy
+
+# Builds or updates the platform. Started by hand (Actions -> Deploy -> Run workflow) with a reason. A Plan job shows what would change and
+# the reason on the run page; then the Apply job waits for YOUR approval on the "production" environment, plans again and refuses to apply
+# anything but the approved changes. No push or merge can create costs by surprise.
+# To deploy on every merge to main instead, add:  push: { branches: [main] }  under "on:".
+run-name: "Deploy: ${{ inputs.reason }}"
+
+on:
+  workflow_dispatch:
+    inputs:
+      reason:
+        description: Why are you deploying? (shown with the plan where you approve it)
+        type: string
+        required: true
+
+permissions: {}
+
+concurrency:
+  group: terraform-platform
+  cancel-in-progress: false
+
+jobs:
+  apply:
+    permissions:
+      contents: read
+      id-token: write
+    uses: platform-boutique/platform-demo-workflows/.github/workflows/terraform-apply.yaml@92fc15988807025a9261209e37d3546ad8e9d757 # v2.1.0
+    with:
+      working_directory: envs/platform
+      state_bucket: ${{ vars.TF_STATE_BUCKET }}
+      tf_vars: '{"api_allowed_cidrs":${{ vars.API_ALLOWED_CIDRS }},"alb_allowed_cidrs":${{ vars.ALB_ALLOWED_CIDRS }}}'
+      runner_ip_variable: api_allowed_cidrs
+      cluster_name: platform-demo
+      reason: ${{ inputs.reason }}
+      environment: production
+    secrets:
+      AWS_ACCESS_KEY_ID: ${{ secrets.AWS_ACCESS_KEY_ID }}
+      AWS_SECRET_ACCESS_KEY: ${{ secrets.AWS_SECRET_ACCESS_KEY }}

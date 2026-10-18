@@ -23,9 +23,9 @@ variable "vpc_cidr" {
 }
 
 variable "kubernetes_version" {
-  description = "Kubernetes version of the cluster."
+  description = "Kubernetes version of the cluster: the newest EKS version the pinned Cilium release supports (Cilium 1.20 documents 1.33 to 1.36; EKS also offers 1.37)."
   type        = string
-  default     = "1.35"
+  default     = "1.36"
 }
 
 variable "api_allowed_cidrs" {
@@ -66,4 +66,10 @@ variable "gateway_port" {
   description = "Port the Cilium Gateway listeners bind on every node; the ALB forwards to it. The Gateway's listener must use the same port."
   type        = number
   default     = 8080
+}
+
+variable "secrets_parameter_prefix" {
+  description = "Parameter Store path of the platform's secrets (created by hand in the console, see docs/secrets.md)."
+  type        = string
+  default     = "/platform-demo"
 }
