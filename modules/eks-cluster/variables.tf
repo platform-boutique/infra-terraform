@@ -4,9 +4,9 @@ variable "name" {
 }
 
 variable "kubernetes_version" {
-  description = "Kubernetes version of the control plane (EKS standard support: 1.34 until 2026-12, 1.35 until 2027-03, 1.36 until 2027-08)."
+  description = "Kubernetes version of the control plane (EKS standard support: 1.34 until 2026-12, 1.35 until 2027-03, 1.36 until 2027-08; 1.37 is available but newer than Cilium 1.20 documents)."
   type        = string
-  default     = "1.35"
+  default     = "1.36"
 }
 
 variable "vpc_id" {

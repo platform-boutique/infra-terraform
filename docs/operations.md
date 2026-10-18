@@ -1,5 +1,12 @@
 # Operations
 
+## Credentials
+
+Terraform, the AWS CLI and the providers read the standard credential chain, so nothing in this repository holds a key: put the
+access key of the IAM user in `~/.aws/credentials` (profile `default`, or any name plus `export AWS_PROFILE=<name>`) and the region in
+`~/.aws/config`. Never put it in a `.tf`, `.tfvars` or `backend.hcl` file: the repository is public (and AWS quarantines keys it finds on GitHub).
+Prefer IAM Identity Center (SSO) over long-lived keys when the account has it; delete test keys when you are done.
+
 ## First build
 
 See the README: `bootstrap/` once (state bucket), then `envs/platform/`: `init -backend-config=backend.hcl`, `plan`, `apply`.

@@ -6,7 +6,7 @@ variable "api_server_host" {
 variable "cilium_version" {
   description = "Version of the cilium/cilium Helm chart. Keep it in step with kind/up.sh of the Helm repository."
   type        = string
-  default     = "1.20.2"
+  default     = "1.20.3"
 }
 
 variable "gateway_api_version" {

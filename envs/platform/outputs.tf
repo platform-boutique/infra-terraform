@@ -32,3 +32,13 @@ output "nat_public_ips" {
   description = "Addresses the private subnets reach the internet from (for allow-lists elsewhere)."
   value       = module.network.nat_public_ips
 }
+
+output "external_secrets_role_arn" {
+  description = "IAM role for the External Secrets Operator's service account (annotation eks.amazonaws.com/role-arn)."
+  value       = module.secrets_access.role_arn
+}
+
+output "secrets_parameter_prefix" {
+  description = "Parameter Store path the External Secrets Operator may read."
+  value       = module.secrets_access.parameter_prefix
+}
