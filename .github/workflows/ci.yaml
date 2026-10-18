@@ -31,7 +31,7 @@ jobs:
       contents: read
       pull-requests: write
       id-token: write
-    uses: platform-boutique/platform-demo-workflows/.github/workflows/terraform-ci.yaml@df6fa8451650806800a5b84462900d7ca2a7a701 # v3.0.0
+    uses: platform-boutique/platform-demo-workflows/.github/workflows/terraform-ci.yaml@292aab034aaae100de565ad8c55634967626f982 # v3.0.1
     with:
       directories: stacks/platform stacks/foundation stacks/bootstrap
       plan_directory: stacks/platform

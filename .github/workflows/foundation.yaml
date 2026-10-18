@@ -24,7 +24,7 @@ jobs:
     permissions:
       contents: read
       id-token: write
-    uses: platform-boutique/platform-demo-workflows/.github/workflows/terraform-plan.yaml@df6fa8451650806800a5b84462900d7ca2a7a701 # v3.0.0
+    uses: platform-boutique/platform-demo-workflows/.github/workflows/terraform-plan.yaml@292aab034aaae100de565ad8c55634967626f982 # v3.0.1
     with:
       working_directory: stacks/foundation
       state_bucket: ${{ vars.TF_STATE_BUCKET }}
@@ -37,7 +37,7 @@ jobs:
     permissions:
       contents: read
       id-token: write
-    uses: platform-boutique/platform-demo-workflows/.github/workflows/terraform-apply.yaml@df6fa8451650806800a5b84462900d7ca2a7a701 # v3.0.0
+    uses: platform-boutique/platform-demo-workflows/.github/workflows/terraform-apply.yaml@292aab034aaae100de565ad8c55634967626f982 # v3.0.1
     with:
       working_directory: stacks/foundation
       state_bucket: ${{ vars.TF_STATE_BUCKET }}
