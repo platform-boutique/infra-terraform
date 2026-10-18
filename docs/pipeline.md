@@ -6,8 +6,8 @@ All workflows call the shared Terraform pipeline in `platform-demo-workflows` (`
 |---|---|---|
 | **CI** (`ci.yaml`) | every pull request | secret scan, workflow lint, then: `fmt` + `validate`, **TFLint**, **Trivy** (misconfigurations), **Checkov** (policy as code), an **Infracost** monthly estimate and a **plan** as a pull request comment. Changes nothing in AWS. |
 | **Bootstrap** (`bootstrap.yaml`) | by hand, once | creates the S3 state bucket. Run it before the first Deploy. |
-| **Deploy** (`deploy.yaml`) | by hand | init, plan, apply. Waits for your approval on the `production` environment. |
-| **Destroy** (`destroy.yaml`) | by hand | type `destroy platform-demo`, approve on the `destruction` environment. Empties the cluster (Argo CD apps, PVCs, LoadBalancer Services), destroys, lists leftovers. Never touches the state bucket. |
+| **Deploy** (`deploy.yaml`) | by hand, with a reason | a **Plan** job shows what would change and your reason on the run page, then **Apply** waits for your approval on the `production` environment. |
+| **Destroy** (`destroy.yaml`) | by hand, with a reason | type `destroy platform-demo`; a **Plan** job lists everything that would be destroyed; approve on the `destruction` environment. Empties the cluster (Argo CD apps, PVCs, LoadBalancer Services), destroys, lists leftovers. Never touches the state bucket. |
 
 ## Setup (done once)
 
@@ -20,8 +20,14 @@ All workflows call the shared Terraform pipeline in `platform-demo-workflows` (`
 ## Running it
 
 1. Merge to `main`, then Actions -> **Bootstrap** -> Run workflow (once).
-2. Actions -> **Deploy** -> Run workflow; approve when it asks. About 20 minutes.
-3. Actions -> **Destroy** -> type the confirmation -> approve. Tick "delete leftover volumes" to remove unattached EBS volumes the driver created.
+2. Actions -> **Deploy** -> Run workflow, type a reason. Open the run: the **Plan** job's summary shows the reason and every resource that would be
+   created, changed or destroyed. Nothing has changed yet. If you agree, open **Review deployments** and approve; if not, reject. About 20 minutes.
+3. Actions -> **Destroy** -> reason + the confirmation -> read the plan -> approve. Tick "delete leftover volumes" to remove unattached EBS
+   volumes the driver created.
+
+**What you approve is what runs.** After the approval the Apply job plans again and compares the list of resource changes with the one you
+saw; if anything differs (someone changed the code or the account in between) it stops without applying and you start a new run. A run
+with nothing to change asks for no approval.
 
 ## Accepted risks
 

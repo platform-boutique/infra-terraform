@@ -30,7 +30,7 @@ jobs:
       contents: read
       pull-requests: write
       id-token: write
-    uses: platform-boutique/platform-demo-workflows/.github/workflows/terraform-ci.yaml@80e9e712bf83293b704a87a070c82608703bbbae # feat/terraform-workflows, becomes v2.1.0
+    uses: platform-boutique/platform-demo-workflows/.github/workflows/terraform-ci.yaml@92fc15988807025a9261209e37d3546ad8e9d757 # v2.1.0
     with:
       directories: envs/platform bootstrap
       plan_directory: envs/platform

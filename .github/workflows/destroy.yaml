@@ -1,11 +1,18 @@
 name: Destroy
 
-# Tears the platform down (for cost). Started by hand, needs the confirmation typed exactly, then waits for an approval on the
-# "destruction" environment. It first removes what runs inside the cluster (Argo CD apps, PVCs, LoadBalancer Services), then destroys,
-# then lists what is left in the account. The state bucket (bootstrap/) is never touched.
+# Tears the platform down (for cost). Started by hand with a reason and the confirmation typed exactly. A Plan job lists everything that
+# would be destroyed; then the Destroy job waits for YOUR approval on the "destruction" environment, empties the cluster (Argo CD apps,
+# PVCs, LoadBalancer Services), destroys exactly the approved resources and lists what is left in the account. The state bucket
+# (bootstrap/) is never touched.
+run-name: "Destroy: ${{ inputs.reason }}"
+
 on:
   workflow_dispatch:
     inputs:
+      reason:
+        description: Why are you destroying it? (shown with the plan where you approve it)
+        type: string
+        required: true
       confirm:
         description: 'Type exactly: destroy platform-demo'
         type: string
@@ -26,7 +33,7 @@ jobs:
     permissions:
       contents: read
       id-token: write
-    uses: platform-boutique/platform-demo-workflows/.github/workflows/terraform-destroy.yaml@80e9e712bf83293b704a87a070c82608703bbbae # feat/terraform-workflows, becomes v2.1.0
+    uses: platform-boutique/platform-demo-workflows/.github/workflows/terraform-destroy.yaml@92fc15988807025a9261209e37d3546ad8e9d757 # v2.1.0
     with:
       confirmation: ${{ inputs.confirm }}
       expected_confirmation: destroy platform-demo
@@ -36,6 +43,7 @@ jobs:
       runner_ip_variable: api_allowed_cidrs
       cluster_name: platform-demo
       delete_leftover_volumes: ${{ inputs.delete_leftover_volumes }}
+      reason: ${{ inputs.reason }}
       environment: destruction
     secrets:
       AWS_ACCESS_KEY_ID: ${{ secrets.AWS_ACCESS_KEY_ID }}
