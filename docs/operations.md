@@ -27,11 +27,11 @@ kubectl get svc -A | grep LoadBalancer   # must be empty
 terraform destroy
 
 # 3. Check for leftovers
-aws ec2 describe-volumes --filters Name=tag:platform-cluster,Values=platform-demo --query 'Volumes[].VolumeId'
+aws ec2 describe-volumes --filters Name=tag:ebs.csi.aws.com/cluster,Values=true --query 'Volumes[].VolumeId'
 aws elb describe-load-balancers --query 'LoadBalancerDescriptions[].LoadBalancerName'
 ```
 
-Volumes created for PersistentVolumeClaims carry the tag `platform-cluster=<name>` for exactly this check. If step 3 finds any, they were
+Volumes the EBS CSI driver creates for PersistentVolumeClaims carry the tag `ebs.csi.aws.com/cluster=true`, which is what this check looks for. If step 3 finds any, they were
 created after step 1 or by something that bypassed the guard: delete them with `aws ec2 delete-volume`.
 `bootstrap/` is never destroyed with the platform: its bucket has `prevent_destroy` and holds the state.
 
