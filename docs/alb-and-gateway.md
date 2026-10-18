@@ -24,7 +24,7 @@ listens on 8080, the targets are unhealthy and the ALB answers `503`.
 
 ## Domain and TLS
 
-- The ALB serves **HTTPS** on 443 with the ACM certificate for `platform-demo.click` and `*.platform-demo.click` (`envs/foundation`); port 80 only
+- The ALB serves **HTTPS** on 443 with the ACM certificate for `platform-demo.click` and `*.platform-demo.click` (`stacks/foundation`); port 80 only
   redirects to HTTPS. Both ports admit only `alb_allowed_cidrs`. TLS ends at the ALB; from there to the nodes it is plain HTTP inside the VPC,
   so the Cilium Gateway needs only an **HTTP** listener on `gateway_port` (no certificate Secret in the cluster).
 - Every UI has a host name (`argocd.`, `backstage.`, `grafana.`, `dex.`, `hubble.`, `shop.platform-demo.click`): an alias record in the

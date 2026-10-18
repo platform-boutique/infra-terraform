@@ -6,7 +6,6 @@ variable "name" {
 variable "cidr" {
   description = "CIDR of the VPC. Every subnet is a /24 carved out of it, so it must be a /16 or larger (up to /8)."
   type        = string
-  default     = "10.0.0.0/16"
 
   validation {
     condition     = can(cidrhost(var.cidr, 0)) && tonumber(split("/", var.cidr)[1]) >= 8 && tonumber(split("/", var.cidr)[1]) <= 16

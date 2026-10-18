@@ -1,5 +1,19 @@
 # Architecture
 
+## Stacks
+
+Three Terraform projects with separate state, split by how long their contents live:
+
+| Stack | Contains | Lives | Applied by |
+|---|---|---|---|
+| `stacks/bootstrap` | state bucket and its KMS key, GitHub OIDC provider, the plan and apply roles | forever | a person, with `scripts/bootstrap.sh` (the pipeline's own roles live here) |
+| `stacks/foundation` | the ACM certificate for the domain | forever | the Foundation workflow |
+| `stacks/platform` | network, EKS, Cilium, nodes, ALB, DNS records, the External Secrets role | hours, then destroyed | the Deploy and Destroy workflows |
+
+A destroy of the platform therefore cannot touch the certificate, the hosted zone, the state or the roles. Every value of the
+environment is in `stacks/<stack>/<stack>.auto.tfvars`; modules have no environment defaults, so there is one place to change a size,
+a zone or a version. Provider versions are pinned exactly in each stack's `versions.tf` (the modules state only a lower bound).
+
 ## Network
 
 | | Zone a | Zone b |
@@ -16,7 +30,7 @@ The default security group allows nothing.
 The community EKS module cannot create the cluster, Cilium and the nodes in one go:
 
 1. **`eks-cluster`**: the control plane with *no* add-ons. EKS does not install the AWS VPC CNI, kube-proxy or CoreDNS here.
-2. **`cilium`**: the Gateway API CRDs, then Cilium. It has to come before the nodes: a managed node group only becomes active when its
+2. **`cilium`**: the Gateway API CRDs (vendored unchanged in `modules/cilium/charts/gateway-api-crds`, checked against a SHA-256 and installed with the Helm provider, the only one that can plan before the cluster exists), then Cilium. It has to come before the nodes: a managed node group only becomes active when its
    nodes are Ready, and a node is not Ready until a CNI runs. Argo CD cannot do this job, because it needs nodes.
 3. **`eks-nodes`**: the Spot node group, CoreDNS and the EBS CSI driver (both need nodes).
 
@@ -47,6 +61,7 @@ raise it with a kubelet setting if the cluster ever runs out of pod slots.
 
 ## Access
 
-EKS access entries, no `aws-auth` ConfigMap. The identity that runs Terraform is cluster-admin; add others with `admin_principal_arns`.
-The public API endpoint is restricted to `api_allowed_cidrs`; the private endpoint is on for the nodes. Secrets are encrypted with a
-customer-managed KMS key. The control plane logs (all five types) go to CloudWatch for 30 days.
+EKS access entries, no `aws-auth` ConfigMap. Cluster-admin: the identity that creates the cluster, the apply role and the users in
+`admin_user_names`. The plan role may only read (Terraform refreshes the Helm releases, which live in Secrets). The public API endpoint
+is open to every address (`api_allowed_cidrs`) and every request is authenticated by IAM; the private endpoint is on for the nodes.
+Secrets are encrypted with a customer-managed KMS key. The control plane logs (all five types) go to CloudWatch for 30 days.

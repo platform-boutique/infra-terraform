@@ -1,0 +1,8 @@
+apiVersion: v2
+name: gateway-api-crds
+description: The Gateway API CRDs (standard channel), unchanged from the upstream release asset, so Terraform can install them with the Helm provider.
+type: application
+# Keep in step with gateway_api_version (the Helm release is given that version and fails if this differs) and refresh
+# templates/standard-install.yaml with scripts/update-gateway-api-crds.sh.
+version: 1.6.3
+appVersion: v1.6.3

@@ -1,15 +1,15 @@
 name: Foundation
 
 # Creates what outlives the platform: the TLS certificate for the domain (free, validated through DNS in the domain's hosted zone).
-# Run it once after registering the domain and after Bootstrap, before the first Deploy. The Destroy workflow never touches it.
-# Like Deploy: a Plan job shows what would be created, then the Apply job waits for YOUR approval on the "production" environment.
+# Run it once after bootstrap, before the first Deploy. Destroy never touches it. One run: a Plan job shows what would be created, then the
+# Review and Apply jobs apply that plan after the approval of the reviewer of the "production" environment.
 run-name: "Foundation: ${{ inputs.reason }}"
 
 on:
   workflow_dispatch:
     inputs:
       reason:
-        description: Why are you applying the foundation? (shown with the plan where you approve it)
+        description: Why are you applying the foundation? (shown with the plan, where it is approved)
         type: string
         required: true
 
@@ -20,17 +20,28 @@ concurrency:
   cancel-in-progress: false
 
 jobs:
-  apply:
+  plan:
     permissions:
       contents: read
       id-token: write
-    uses: platform-boutique/platform-demo-workflows/.github/workflows/terraform-apply.yaml@92fc15988807025a9261209e37d3546ad8e9d757 # v2.1.0
+    uses: platform-boutique/platform-demo-workflows/.github/workflows/terraform-plan.yaml@470ad03eea7fa2594e014d450d544a28420ddef6 # feat/terraform-plan-apply, becomes v3.0.0
     with:
-      working_directory: envs/foundation
+      working_directory: stacks/foundation
       state_bucket: ${{ vars.TF_STATE_BUCKET }}
-      tf_vars: '{"domain_name":"${{ vars.DOMAIN_NAME }}"}'
+      role_to_assume: ${{ vars.AWS_PLAN_ROLE_ARN }}
       reason: ${{ inputs.reason }}
+
+  apply:
+    needs: plan
+    if: needs.plan.outputs.has_changes == 'true'
+    permissions:
+      contents: read
+      id-token: write
+    uses: platform-boutique/platform-demo-workflows/.github/workflows/terraform-apply.yaml@470ad03eea7fa2594e014d450d544a28420ddef6 # feat/terraform-plan-apply, becomes v3.0.0
+    with:
+      working_directory: stacks/foundation
+      state_bucket: ${{ vars.TF_STATE_BUCKET }}
+      plan_role_to_assume: ${{ vars.AWS_PLAN_ROLE_ARN }}
+      role_to_assume: ${{ vars.AWS_APPLY_ROLE_ARN }}
+      plan_id: ${{ needs.plan.outputs.plan_id }}
       environment: production
-    secrets:
-      AWS_ACCESS_KEY_ID: ${{ secrets.AWS_ACCESS_KEY_ID }}
-      AWS_SECRET_ACCESS_KEY: ${{ secrets.AWS_SECRET_ACCESS_KEY }}

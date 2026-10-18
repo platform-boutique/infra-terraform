@@ -27,20 +27,33 @@ module "eks" {
 
   service_ipv4_cidr = var.service_cidr
 
-  # Access through EKS access entries (no aws-auth ConfigMap). Whoever runs Terraform becomes cluster-admin.
+  # Access through EKS access entries (no aws-auth ConfigMap). Whoever creates the cluster becomes cluster-admin.
   authentication_mode                      = "API"
   enable_cluster_creator_admin_permissions = true
-  access_entries = {
-    for label, arn in var.admin_principal_arns : label => {
-      principal_arn = arn
-      policy_associations = {
-        admin = {
-          policy_arn   = "arn:aws:eks::aws:cluster-access-policy/AmazonEKSClusterAdminPolicy"
-          access_scope = { type = "cluster" }
+  access_entries = merge(
+    {
+      for label, arn in var.admin_principal_arns : label => {
+        principal_arn = arn
+        policy_associations = {
+          admin = {
+            policy_arn   = "arn:aws:eks::aws:cluster-access-policy/AmazonEKSClusterAdminPolicy"
+            access_scope = { type = "cluster" }
+          }
         }
       }
-    }
-  }
+    },
+    {
+      for label, arn in var.viewer_principal_arns : label => {
+        principal_arn = arn
+        policy_associations = {
+          view = {
+            policy_arn   = "arn:aws:eks::aws:cluster-access-policy/AmazonEKSAdminViewPolicy"
+            access_scope = { type = "cluster" }
+          }
+        }
+      }
+    },
+  )
 
   # IAM roles for service accounts (the EBS CSI driver uses one).
   enable_irsa = true

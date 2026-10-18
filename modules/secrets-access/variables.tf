@@ -16,7 +16,6 @@ variable "oidc_provider" {
 variable "parameter_prefix" {
   description = "Systems Manager Parameter Store path the platform's secrets live under. Created by hand (never by Terraform, so the values stay out of the state) and kept when the platform is destroyed."
   type        = string
-  default     = "/platform-demo"
 
   validation {
     condition     = can(regex("^/[A-Za-z0-9_.-]+(/[A-Za-z0-9_.-]+)*$", var.parameter_prefix))

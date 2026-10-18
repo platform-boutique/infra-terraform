@@ -4,28 +4,21 @@
 # one piece of cluster software that has to exist before anything else (the same reason kind/up.sh installs it before Argo CD).
 
 # --- Gateway API CRDs --------------------------------------------------------------------------------------------------------
-# They must exist before Cilium starts, or its Gateway controller stays off. The release asset is pinned by version and checked
-# against a checksum. Applied server-side: the CRDs are too large for client-side apply's annotation.
-data "http" "gateway_api_crds" {
-  url = "https://github.com/kubernetes-sigs/gateway-api/releases/download/${var.gateway_api_version}/standard-install.yaml"
+# They must exist before Cilium starts, or its Gateway controller stays off. The release asset is kept in charts/gateway-api-crds
+# exactly as upstream publishes it, and its SHA-256 is checked, so what is installed is what was reviewed. They are installed with the
+# Helm provider, not the kubectl provider: only the Helm provider can plan before the cluster exists.
+resource "helm_release" "gateway_api_crds" {
+  name      = "gateway-api-crds"
+  chart     = "${path.module}/charts/gateway-api-crds"
+  version   = trimprefix(var.gateway_api_version, "v")
+  namespace = "kube-system"
 
   lifecycle {
-    postcondition {
-      condition     = sha256(self.response_body) == var.gateway_api_crds_sha256
-      error_message = "standard-install.yaml of Gateway API ${var.gateway_api_version} does not match gateway_api_crds_sha256. Refusing to apply it."
+    precondition {
+      condition     = filesha256("${path.module}/charts/gateway-api-crds/templates/standard-install.yaml") == var.gateway_crds_sha256
+      error_message = "charts/gateway-api-crds/templates/standard-install.yaml does not match gateway_crds_sha256 (Gateway API ${var.gateway_api_version}). Refusing to install it; use scripts/update-gateway-api-crds.sh."
     }
   }
-}
-
-data "kubectl_file_documents" "gateway_api_crds" {
-  content = data.http.gateway_api_crds.response_body
-}
-
-resource "kubectl_manifest" "gateway_api_crds" {
-  for_each = data.kubectl_file_documents.gateway_api_crds.manifests
-
-  yaml_body         = each.value
-  server_side_apply = true
 }
 
 # --- Cilium ------------------------------------------------------------------------------------------------------------------
@@ -76,5 +69,5 @@ resource "helm_release" "cilium" {
     }
   })]
 
-  depends_on = [kubectl_manifest.gateway_api_crds]
+  depends_on = [helm_release.gateway_api_crds]
 }

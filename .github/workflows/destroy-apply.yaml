@@ -1,0 +1,37 @@
+name: Destroy apply
+
+# Step 2 of 2. Destroys exactly what "Destroy plan" listed, after the approval of the reviewer of the "destruction" environment.
+# Before Terraform destroys anything, what runs inside the cluster is removed (scripts/destroy-prepare.sh); afterwards what is left in the
+# account is listed (scripts/destroy-verify.sh).
+run-name: "Destroy apply: plan ${{ inputs.plan_id }}"
+
+on:
+  workflow_dispatch:
+    inputs:
+      plan_id:
+        description: Plan id from the "Destroy plan" run page (for example 1234567890-1)
+        type: string
+        required: true
+
+permissions: {}
+
+concurrency:
+  group: terraform-platform
+  cancel-in-progress: false
+
+jobs:
+  destroy:
+    permissions:
+      contents: read
+      id-token: write
+    uses: platform-boutique/platform-demo-workflows/.github/workflows/terraform-apply.yaml@470ad03eea7fa2594e014d450d544a28420ddef6 # feat/terraform-plan-apply, becomes v3.0.0
+    with:
+      working_directory: stacks/platform
+      state_bucket: ${{ vars.TF_STATE_BUCKET }}
+      plan_role_to_assume: ${{ vars.AWS_PLAN_ROLE_ARN }}
+      role_to_assume: ${{ vars.AWS_APPLY_ROLE_ARN }}
+      plan_id: ${{ inputs.plan_id }}
+      destroy: true
+      environment: destruction
+      pre_apply_script: scripts/destroy-prepare.sh
+      post_apply_script: scripts/destroy-verify.sh

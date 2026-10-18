@@ -51,7 +51,6 @@ variable "instance_types" {
 variable "capacity_type" {
   description = "SPOT or ON_DEMAND."
   type        = string
-  default     = "SPOT"
 
   validation {
     condition     = contains(["SPOT", "ON_DEMAND"], var.capacity_type)
@@ -62,25 +61,21 @@ variable "capacity_type" {
 variable "desired_size" {
   description = "Number of nodes."
   type        = number
-  default     = 2
 }
 
 variable "min_size" {
   description = "Smallest number of nodes."
   type        = number
-  default     = 2
 }
 
 variable "max_size" {
   description = "Largest number of nodes (room for the surge node of a rolling update)."
   type        = number
-  default     = 4
 }
 
 variable "disk_size_gib" {
   description = "Size of each node's root volume."
   type        = number
-  default     = 100
 }
 
 variable "tags" {

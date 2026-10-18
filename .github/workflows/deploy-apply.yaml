@@ -1,0 +1,33 @@
+name: Deploy apply
+
+# Step 2 of 2. Applies the plan that "Deploy plan" saved, exactly as it was shown. A Review job checks the plan belongs to this commit and
+# is recent and shows it again; the Apply job then waits for the approval of the reviewer of the "production" environment.
+run-name: "Deploy apply: plan ${{ inputs.plan_id }}"
+
+on:
+  workflow_dispatch:
+    inputs:
+      plan_id:
+        description: Plan id from the "Deploy plan" run page (for example 1234567890-1)
+        type: string
+        required: true
+
+permissions: {}
+
+concurrency:
+  group: terraform-platform
+  cancel-in-progress: false
+
+jobs:
+  apply:
+    permissions:
+      contents: read
+      id-token: write
+    uses: platform-boutique/platform-demo-workflows/.github/workflows/terraform-apply.yaml@470ad03eea7fa2594e014d450d544a28420ddef6 # feat/terraform-plan-apply, becomes v3.0.0
+    with:
+      working_directory: stacks/platform
+      state_bucket: ${{ vars.TF_STATE_BUCKET }}
+      plan_role_to_assume: ${{ vars.AWS_PLAN_ROLE_ARN }}
+      role_to_assume: ${{ vars.AWS_APPLY_ROLE_ARN }}
+      plan_id: ${{ inputs.plan_id }}
+      environment: production

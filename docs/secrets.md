@@ -31,5 +31,5 @@ Systems Manager). The External Secrets Operator, installed through GitOps with i
 (`terraform output external_secrets_role_arn`), turns the parameters into the Kubernetes Secrets the charts expect
 (`sso/dex-secrets`, `backstage/backstage-secrets`).
 
-The role's prefix is `secrets_parameter_prefix` (default `/platform-demo`). The GitHub OAuth App's callback URL is the HTTPS address
+The role's prefix is `secrets_parameter_prefix` in `platform.auto.tfvars` (`/platform-demo`). The GitHub OAuth App's callback URL is the HTTPS address
 Dex is served on: **`https://dex.platform-demo.click/callback`** (see [the ALB and the Gateway](alb-and-gateway.md)).
