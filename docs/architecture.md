@@ -61,7 +61,7 @@ raise it with a kubelet setting if the cluster ever runs out of pod slots.
 
 ## Access
 
-EKS access entries, no `aws-auth` ConfigMap. Cluster-admin: the identity that creates the cluster, the apply role and the users in
-`admin_user_names`. The plan role may only read (Terraform refreshes the Helm releases, which live in Secrets). The public API endpoint
+EKS access entries, no `aws-auth` ConfigMap. Cluster-admin: the apply role (`admin_role_names`) and the users in
+`admin_user_names`; the identity that creates the cluster gets nothing extra, so a laptop and the pipeline build the same cluster. The plan role may only read (Terraform refreshes the Helm releases, which live in Secrets). The public API endpoint
 is open to every address (`api_allowed_cidrs`) and every request is authenticated by IAM; the private endpoint is on for the nodes.
 Secrets are encrypted with a customer-managed KMS key. The control plane logs (all five types) go to CloudWatch for 30 days.

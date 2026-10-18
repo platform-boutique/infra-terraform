@@ -1,0 +1,50 @@
+name: Deploy
+
+# Builds or updates the platform. One run, three steps:
+#   Plan    plans and saves the plan; changes nothing. The run page shows your reason and what would change.
+#   Review  checks the saved plan belongs to this commit and shows it again.
+#   Apply   waits for the approval of the reviewer of the "production" environment, then applies exactly that plan.
+# Started by hand (Actions -> Deploy -> Run workflow) with a reason. A run with nothing to change asks for no approval.
+run-name: "Deploy: ${{ inputs.reason }}"
+
+on:
+  workflow_dispatch:
+    inputs:
+      reason:
+        description: Why are you deploying? (shown with the plan, where it is approved)
+        type: string
+        required: true
+
+permissions: {}
+
+concurrency:
+  group: terraform-platform
+  cancel-in-progress: false
+
+jobs:
+  plan:
+    permissions:
+      contents: read
+      id-token: write
+    uses: platform-boutique/platform-demo-workflows/.github/workflows/terraform-plan.yaml@d0080e585b5f826f3b1755e3314256bb81a22b9a # feat/terraform-plan-apply, becomes v3.0.0
+    with:
+      working_directory: stacks/platform
+      state_bucket: ${{ vars.TF_STATE_BUCKET }}
+      role_to_assume: ${{ vars.AWS_PLAN_ROLE_ARN }}
+      tf_vars: '{"alb_allowed_cidrs":${{ vars.ALB_ALLOWED_CIDRS }}}'
+      reason: ${{ inputs.reason }}
+
+  apply:
+    needs: plan
+    if: needs.plan.outputs.has_changes == 'true'
+    permissions:
+      contents: read
+      id-token: write
+    uses: platform-boutique/platform-demo-workflows/.github/workflows/terraform-apply.yaml@d0080e585b5f826f3b1755e3314256bb81a22b9a # feat/terraform-plan-apply, becomes v3.0.0
+    with:
+      working_directory: stacks/platform
+      state_bucket: ${{ vars.TF_STATE_BUCKET }}
+      plan_role_to_assume: ${{ vars.AWS_PLAN_ROLE_ARN }}
+      role_to_assume: ${{ vars.AWS_APPLY_ROLE_ARN }}
+      plan_id: ${{ needs.plan.outputs.plan_id }}
+      environment: production

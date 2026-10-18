@@ -27,9 +27,10 @@ module "eks" {
 
   service_ipv4_cidr = var.service_cidr
 
-  # Access through EKS access entries (no aws-auth ConfigMap). Whoever creates the cluster becomes cluster-admin.
+  # Access through EKS access entries (no aws-auth ConfigMap), all of them explicit. Whoever creates the cluster gets nothing extra, so the
+  # result is the same from a laptop and from the pipeline (the creator's own entry would clash with the same principal listed below).
   authentication_mode                      = "API"
-  enable_cluster_creator_admin_permissions = true
+  enable_cluster_creator_admin_permissions = false
   access_entries = merge(
     {
       for label, arn in var.admin_principal_arns : label => {

@@ -12,7 +12,7 @@ work; the pipeline uses its OIDC roles. Turn on MFA for that user, or use IAM Id
 1. `scripts/bootstrap.sh` (once): the state bucket, the OIDC provider and the two roles. It shows the plan and asks. Then set the
    repository variables it prints ([Pipeline](pipeline.md)).
 2. Actions -> **Foundation** (the certificate; needs the registered domain's hosted zone).
-3. Actions -> **Deploy plan**, then **Deploy apply**. About 20 minutes: network 2, control plane 10, nodes 5, add-ons 3.
+3. Actions -> **Deploy**, read the plan on the run page, approve. About 20 minutes: network 2, control plane 10, nodes 5, add-ons 3.
 
 Order of creation: network, control plane, Gateway API CRDs, Cilium, nodes (they become Ready because Cilium runs on them), CoreDNS,
 EBS CSI, ALB, DNS. If the node group fails to become active, look at Cilium first:
@@ -40,7 +40,7 @@ Your user gets cluster-admin if it is listed in `admin_user_names` in `platform.
 
 ## Destroy
 
-Actions -> **Destroy plan** (reason, type `destroy platform-demo`), read the list, then **Destroy apply** with the plan id and approve.
+Actions -> **Destroy** (reason, type `destroy platform-demo`), read the list on the run page, approve.
 The workflow empties the cluster first, destroys, and lists what is left on the run page. If it reports EBS volumes of the EBS CSI driver,
 run `scripts/delete-leftover-volumes.sh`. The EKS secrets key stays "scheduled for deletion" for 7 days; that is normal and free.
 `stacks/bootstrap` and `stacks/foundation` are never destroyed with the platform.

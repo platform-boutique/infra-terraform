@@ -34,7 +34,7 @@ variable "service_cidr" {
 }
 
 variable "admin_principal_arns" {
-  description = "Extra IAM principals that get cluster-admin, by label. The principal that creates the cluster always has it."
+  description = "IAM principals that get cluster-admin, by label. The only admins: the principal that creates the cluster gets nothing extra, so list everyone who needs it."
   type        = map(string)
   default     = {}
 }

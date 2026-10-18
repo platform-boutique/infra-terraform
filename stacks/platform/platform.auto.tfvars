@@ -23,7 +23,7 @@ hostnames   = ["argocd", "backstage", "grafana", "dex", "hubble", "shop"]
 # The API endpoint is public and IAM-authenticated (accepted risk, .trivyignore.yaml).
 api_allowed_cidrs = ["0.0.0.0/0"]
 
-# Who may use the cluster, besides the identity that created it (which is cluster-admin automatically).
+# Who may use the cluster. Explicit: whoever creates it gets nothing extra.
 admin_role_names  = ["platform-demo-github-apply"]
 admin_user_names  = ["terraform-platform"]
 viewer_role_names = ["platform-demo-github-plan"]

@@ -25,7 +25,7 @@ All values of the environment are in one committed file per stack (`stacks/<stac
 1. **Once, by hand** (an administrator's AWS credentials in `~/.aws/credentials`): `scripts/bootstrap.sh`, then set the repository
    variables it prints.
 2. **Actions -> Foundation** (once): the certificate.
-3. **Actions -> Deploy plan**, read the plan, then **Deploy apply** with its plan id and approve. About 20 minutes.
-4. **Actions -> Destroy plan**, then **Destroy apply**, when the cost should stop.
+3. **Actions -> Deploy**: read the plan on the run page, then approve. About 20 minutes.
+4. **Actions -> Destroy** (type the confirmation, read the plan, approve) when the cost should stop.
 
 Details: [Pipeline](docs/pipeline.md) and [Operations](docs/operations.md). Credentials and secrets never go into this repository (it is public).

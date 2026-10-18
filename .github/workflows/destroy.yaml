@@ -1,0 +1,74 @@
+name: Destroy
+
+# Tears the platform down (stacks/platform) for cost. One run, three steps, like Deploy, and a typed confirmation first:
+#   Plan    lists everything that would be destroyed; changes nothing.
+#   Review  checks the saved plan belongs to this commit and shows it again.
+#   Apply   waits for the approval of the reviewer of the "destruction" environment, empties the cluster (scripts/destroy-prepare.sh),
+#           destroys exactly the planned resources, and lists what is left in the account (scripts/destroy-verify.sh).
+# The bucket, the roles and the certificate (bootstrap, foundation) are other stacks and are never touched.
+run-name: "Destroy: ${{ inputs.reason }}"
+
+on:
+  workflow_dispatch:
+    inputs:
+      reason:
+        description: Why are you destroying it? (shown with the plan, where it is approved)
+        type: string
+        required: true
+      confirm:
+        description: 'Type exactly: destroy platform-demo'
+        type: string
+        required: true
+
+permissions: {}
+
+concurrency:
+  group: terraform-platform
+  cancel-in-progress: false
+
+jobs:
+  confirm:
+    name: Confirm
+    runs-on: ubuntu-latest
+    permissions: {}
+    env:
+      GOT: ${{ inputs.confirm }}
+    steps:
+      - name: Typed confirmation matches
+        run: |
+          if [ "$GOT" != "destroy platform-demo" ]; then
+            echo "::error::Nothing was planned: the confirmation does not match. Type exactly: destroy platform-demo"
+            exit 1
+          fi
+
+  plan:
+    needs: confirm
+    permissions:
+      contents: read
+      id-token: write
+    uses: platform-boutique/platform-demo-workflows/.github/workflows/terraform-plan.yaml@d0080e585b5f826f3b1755e3314256bb81a22b9a # feat/terraform-plan-apply, becomes v3.0.0
+    with:
+      working_directory: stacks/platform
+      state_bucket: ${{ vars.TF_STATE_BUCKET }}
+      role_to_assume: ${{ vars.AWS_PLAN_ROLE_ARN }}
+      tf_vars: '{"alb_allowed_cidrs":${{ vars.ALB_ALLOWED_CIDRS }}}'
+      reason: ${{ inputs.reason }}
+      destroy: true
+
+  destroy:
+    needs: plan
+    if: needs.plan.outputs.has_changes == 'true'
+    permissions:
+      contents: read
+      id-token: write
+    uses: platform-boutique/platform-demo-workflows/.github/workflows/terraform-apply.yaml@d0080e585b5f826f3b1755e3314256bb81a22b9a # feat/terraform-plan-apply, becomes v3.0.0
+    with:
+      working_directory: stacks/platform
+      state_bucket: ${{ vars.TF_STATE_BUCKET }}
+      plan_role_to_assume: ${{ vars.AWS_PLAN_ROLE_ARN }}
+      role_to_assume: ${{ vars.AWS_APPLY_ROLE_ARN }}
+      plan_id: ${{ needs.plan.outputs.plan_id }}
+      destroy: true
+      environment: destruction
+      pre_apply_script: scripts/destroy-prepare.sh
+      post_apply_script: scripts/destroy-verify.sh
