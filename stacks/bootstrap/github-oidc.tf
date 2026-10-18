@@ -37,8 +37,8 @@ data "aws_iam_policy_document" "plan_trust" {
       test     = "StringLike"
       variable = "${local.github_issuer}:sub"
       values = [
-        "repo:${var.github_repository}:ref:refs/heads/*",
-        "repo:${var.github_repository}:pull_request",
+        "${var.github_subject_prefix}:ref:refs/heads/*",
+        "${var.github_subject_prefix}:pull_request",
       ]
     }
   }
@@ -109,7 +109,7 @@ data "aws_iam_policy_document" "apply_trust" {
     condition {
       test     = "StringEquals"
       variable = "${local.github_issuer}:sub"
-      values   = [for e in var.github_apply_environments : "repo:${var.github_repository}:environment:${e}"]
+      values   = [for e in var.github_apply_environments : "${var.github_subject_prefix}:environment:${e}"]
     }
   }
 }
