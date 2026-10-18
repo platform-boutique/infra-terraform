@@ -1,0 +1,16 @@
+apiVersion: backstage.io/v1alpha1
+kind: Component
+metadata:
+  name: infra-terraform
+  title: Terraform - AWS environment
+  description: "VPC, EKS with Cilium as an overlay, two Spot nodes and a Terraform-owned ALB for the platform-demo environment."
+  annotations:
+    github.com/project-slug: platform-boutique/infra-terraform
+    backstage.io/source-location: url:https://github.com/platform-boutique/infra-terraform/tree/main/
+    backstage.io/techdocs-ref: dir:.
+  tags: [terraform, aws, eks, infrastructure]
+spec:
+  type: infrastructure
+  lifecycle: experimental
+  owner: group:default/maintainers
+  system: delivery

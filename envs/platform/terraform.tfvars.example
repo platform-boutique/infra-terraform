@@ -1,0 +1,6 @@
+# Copy to terraform.tfvars (git-ignored) and fill in. Find your address with: curl -s https://checkip.amazonaws.com
+api_allowed_cidrs = ["203.0.113.7/32"]
+alb_allowed_cidrs = ["203.0.113.7/32"]
+
+# Optional: more cluster admins (an SSO role, a colleague). The identity that runs Terraform is admin anyway.
+# admin_principal_arns = { me = "arn:aws:iam::123456789012:role/aws-reserved/sso.amazonaws.com/AWSReservedSSO_AdministratorAccess_xxxx" }

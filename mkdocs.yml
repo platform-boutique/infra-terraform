@@ -1,0 +1,17 @@
+site_name: infra-terraform
+site_description: Terraform for the platform-demo AWS environment.
+repo_url: https://github.com/platform-boutique/infra-terraform
+edit_uri: edit/main/docs/
+nav:
+  - Overview: index.md
+  - Architecture: architecture.md
+  - The ALB and the Gateway: alb-and-gateway.md
+  - Operations: operations.md
+theme:
+  name: material
+  features:
+    - navigation.sections
+    - navigation.top
+    - content.code.copy
+plugins:
+  - techdocs-core

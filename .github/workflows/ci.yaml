@@ -1,0 +1,65 @@
+name: CI
+
+# Pull-request gate. Nothing runs on a plain push, and nothing here needs AWS credentials: it checks formatting, validates the
+# configuration without a backend and scans it for misconfigurations. Planning and applying are done by hand (README).
+on:
+  pull_request:
+    branches: [main]
+  workflow_dispatch:
+
+permissions: {}
+
+concurrency:
+  group: ci-${{ github.ref }}
+  cancel-in-progress: true
+
+jobs:
+  secrets:
+    permissions:
+      contents: read
+    uses: platform-boutique/platform-demo-workflows/.github/workflows/secret-scan.yaml@28d80c1d4abd81c1529bf593a874640132692e8a # v2.0.2
+
+  workflows:
+    permissions:
+      contents: read
+    uses: platform-boutique/platform-demo-workflows/.github/workflows/workflow-lint.yaml@28d80c1d4abd81c1529bf593a874640132692e8a # v2.0.2
+
+  terraform:
+    name: Terraform fmt and validate
+    runs-on: ubuntu-latest
+    permissions:
+      contents: read
+    steps:
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+        with:
+          persist-credentials: false
+      - uses: hashicorp/setup-terraform@dfe3c3f87815947d99a8997f908cb6525fc44e9e # v4.0.1
+        with:
+          terraform_version: 1.16.6
+          terraform_wrapper: false
+      - name: Format
+        run: terraform fmt -recursive -check -diff
+      - name: Validate
+        run: |
+          for dir in bootstrap envs/platform; do
+            echo "::group::$dir"
+            terraform -chdir="$dir" init -backend=false -input=false -lockfile=readonly
+            terraform -chdir="$dir" validate
+            echo "::endgroup::"
+          done
+
+  trivy:
+    name: Trivy config scan
+    runs-on: ubuntu-latest
+    permissions:
+      contents: read
+    steps:
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+        with:
+          persist-credentials: false
+      - uses: aquasecurity/trivy-action@ed142fd0673e97e23eac54620cfb913e5ce36c25 # v0.36.0
+        with:
+          scan-type: config
+          scan-ref: .
+          severity: HIGH,CRITICAL
+          exit-code: "1"
