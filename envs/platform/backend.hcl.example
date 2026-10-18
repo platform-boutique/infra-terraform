@@ -1,3 +1,0 @@
-# Copy to backend.hcl (git-ignored). `terraform output backend_hcl` in bootstrap/ prints the real values.
-bucket = "platform-demo-tfstate-123456789012-us-east-1"
-region = "us-east-1"

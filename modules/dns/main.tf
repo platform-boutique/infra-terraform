@@ -1,5 +1,5 @@
 # One alias record per host name, all pointing at the load balancer. Alias records are free and follow the load balancer's addresses.
-# The hosted zone itself is not created here (see envs/platform): it belongs to the registered domain and outlives every deployment.
+# The hosted zone itself is not created here (see stacks/platform): it belongs to the registered domain and outlives every deployment.
 
 resource "aws_route53_record" "host" {
   for_each = toset(var.hostnames)

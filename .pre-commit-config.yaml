@@ -12,6 +12,8 @@ repos:
       - id: detect-private-key
         stages: [pre-commit]
       - id: check-added-large-files
+        # The one large file is the upstream Gateway API CRD release asset, vendored unchanged and checked against a SHA-256 by Terraform.
+        exclude: ^modules/cilium/charts/gateway-api-crds/templates/standard-install\.yaml$
         stages: [pre-commit]
 
   - repo: https://github.com/gitleaks/gitleaks

@@ -19,7 +19,7 @@ variable "subnet_ids" {
 }
 
 variable "certificate_arn" {
-  description = "ACM certificate of the domain (envs/foundation). The load balancer serves HTTPS with it; port 80 only redirects to HTTPS."
+  description = "ACM certificate of the domain (stacks/foundation). The load balancer serves HTTPS with it; port 80 only redirects to HTTPS."
   type        = string
 }
 
@@ -42,7 +42,6 @@ variable "allowed_cidrs" {
 variable "gateway_port" {
   description = "Port the Cilium Gateway listeners bind on every node (hostNetwork). The load balancer sends traffic here. Above 1023: Cilium's Envoy has no privileges for lower ports."
   type        = number
-  default     = 8080
 
   validation {
     condition     = var.gateway_port > 1023 && var.gateway_port < 65536

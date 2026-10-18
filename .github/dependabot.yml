@@ -19,8 +19,7 @@ updates:
   # Providers (the lock files) and registry modules. A new major version is a deliberate upgrade, never an automatic PR.
   - package-ecosystem: terraform
     directories:
-      - /bootstrap
-      - /envs/platform
+      - /stacks/*
       - /modules/*
     multi-ecosystem-group: dependencies
     patterns: ["*"]

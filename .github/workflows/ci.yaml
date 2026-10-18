@@ -2,7 +2,8 @@ name: CI
 
 # Pull-request gate. Nothing runs on a plain push. The Terraform jobs come from the shared pipeline
 # (platform-demo-workflows): fmt/validate, TFLint, Trivy, Checkov, an Infracost estimate and a plan as a pull request comment.
-# They change nothing in AWS. Accepted risks are in .trivyignore.yaml and .checkov.yaml / inline #checkov:skip, each with a reason.
+# They change nothing in AWS (the plan uses the read-only role). Accepted risks are in .trivyignore.yaml and .checkov.yaml / inline
+# #checkov:skip, each with a reason.
 on:
   pull_request:
     branches: [main]
@@ -30,14 +31,13 @@ jobs:
       contents: read
       pull-requests: write
       id-token: write
-    uses: platform-boutique/platform-demo-workflows/.github/workflows/terraform-ci.yaml@92fc15988807025a9261209e37d3546ad8e9d757 # v2.1.0
+    uses: platform-boutique/platform-demo-workflows/.github/workflows/terraform-ci.yaml@6a49ba88524957cd78604d05bc98accb7cd46975 # v3.0.2
     with:
-      directories: envs/platform envs/foundation bootstrap
-      plan_directory: envs/platform
-      cost_directory: envs/platform
+      directories: stacks/platform stacks/foundation stacks/bootstrap
+      plan_directory: stacks/platform
+      cost_directory: stacks/platform
       state_bucket: ${{ vars.TF_STATE_BUCKET }}
-      tf_vars: '{"domain_name":"${{ vars.DOMAIN_NAME }}","api_allowed_cidrs":${{ vars.API_ALLOWED_CIDRS }},"alb_allowed_cidrs":${{ vars.ALB_ALLOWED_CIDRS }}}'
+      role_to_assume: ${{ vars.AWS_PLAN_ROLE_ARN }}
+      tf_vars: '{"alb_allowed_cidrs":${{ vars.ALB_ALLOWED_CIDRS }}}'
     secrets:
-      AWS_ACCESS_KEY_ID: ${{ secrets.AWS_ACCESS_KEY_ID }}
-      AWS_SECRET_ACCESS_KEY: ${{ secrets.AWS_SECRET_ACCESS_KEY }}
       INFRACOST_API_KEY: ${{ secrets.INFRACOST_API_KEY }}

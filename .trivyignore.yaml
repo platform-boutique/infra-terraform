@@ -7,8 +7,9 @@ misconfigurations:
       The ALB is internet-facing by design (it is the platform's front door: HTTPS, with port 80 redirecting) but its security group admits only allowed_cidrs.
   - id: AVD-AWS-0040
     statement: >-
-      The EKS API endpoint is public so that Terraform (a laptop or a GitHub runner) can reach it; it is restricted to public_access_cidrs,
-      IAM-authenticated, and the private endpoint is on for the nodes. Raised inside the community EKS module.
+      The EKS API endpoint is public and open to every address (api_allowed_cidrs). Every request is authenticated by IAM and authorised by
+      the cluster's access entries; the nodes use the private endpoint. It is open on purpose: a GitHub runner has a new address on every run
+      and a laptop's changes too, and a plan that contained either could not be applied as approved. Raised inside the community EKS module.
   - id: AVD-AWS-0104
     statement: >-
       Egress to any address from the nodes' security group (EKS module default): nodes pull images and reach AWS APIs through the NAT

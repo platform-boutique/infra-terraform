@@ -9,4 +9,4 @@ A highly available platform foundation in `us-east-1`, zones `a` and `b`:
 - **Front door:** an ALB, owned by Terraform, serving HTTPS for `platform-demo.click` (free ACM certificate, DNS records for each UI) and forwarding to the Gateway's port on the nodes.
 
 Everything in AWS is a Terraform resource, so `terraform destroy` leaves nothing behind that you would have to delete in the console.
-The pages: [Architecture](architecture.md), [The ALB and the Gateway](alb-and-gateway.md), [Operations](operations.md).
+The pages: [Architecture](architecture.md), [The ALB and the Gateway](alb-and-gateway.md), [Secrets](secrets.md), [The pipeline](pipeline.md), [Operations](operations.md).

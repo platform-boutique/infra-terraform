@@ -1,5 +1,6 @@
-# Remote state for every other stack in this repository. Run once, with local state (the bucket cannot hold its own state):
-# the state of this tiny stack is a single bucket and can be re-imported if the local file is lost.
+# What every other stack stands on, and what is never destroyed: the bucket for the remote state (and for saved plans) and the identities
+# the pipeline uses (github-oidc.tf). It is applied by a person with admin rights, never by the pipeline, because the pipeline's own
+# roles live here. The first apply uses a local state file that scripts/bootstrap.sh then moves into the bucket it created.
 
 provider "aws" {
   region = var.region
@@ -106,6 +107,20 @@ resource "aws_s3_bucket_lifecycle_configuration" "state" {
 
     abort_incomplete_multipart_upload {
       days_after_initiation = 7
+    }
+  }
+
+  # Saved plans (plans/<stack>/<run>/) are only useful until they are applied; the plan is stale after any change to the state anyway.
+  rule {
+    id     = "expire-saved-plans"
+    status = "Enabled"
+
+    filter {
+      prefix = "plans/"
+    }
+
+    expiration {
+      days = 7
     }
   }
 }

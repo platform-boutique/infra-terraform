@@ -1,16 +1,17 @@
 name: Deploy
 
-# Builds or updates the platform. Started by hand (Actions -> Deploy -> Run workflow) with a reason. A Plan job shows what would change and
-# the reason on the run page; then the Apply job waits for YOUR approval on the "production" environment, plans again and refuses to apply
-# anything but the approved changes. No push or merge can create costs by surprise.
-# To deploy on every merge to main instead, add:  push: { branches: [main] }  under "on:".
+# Builds or updates the platform. One run, three steps:
+#   Plan    plans and saves the plan; changes nothing. The run page shows your reason and what would change.
+#   Review  checks the saved plan belongs to this commit and shows it again.
+#   Apply   waits for the approval of the reviewer of the "production" environment, then applies exactly that plan.
+# Started by hand (Actions -> Deploy -> Run workflow) with a reason. A run with nothing to change asks for no approval.
 run-name: "Deploy: ${{ inputs.reason }}"
 
 on:
   workflow_dispatch:
     inputs:
       reason:
-        description: Why are you deploying? (shown with the plan where you approve it)
+        description: Why are you deploying? (shown with the plan, where it is approved)
         type: string
         required: true
 
@@ -21,19 +22,29 @@ concurrency:
   cancel-in-progress: false
 
 jobs:
-  apply:
+  plan:
     permissions:
       contents: read
       id-token: write
-    uses: platform-boutique/platform-demo-workflows/.github/workflows/terraform-apply.yaml@92fc15988807025a9261209e37d3546ad8e9d757 # v2.1.0
+    uses: platform-boutique/platform-demo-workflows/.github/workflows/terraform-plan.yaml@6a49ba88524957cd78604d05bc98accb7cd46975 # v3.0.2
     with:
-      working_directory: envs/platform
+      working_directory: stacks/platform
       state_bucket: ${{ vars.TF_STATE_BUCKET }}
-      tf_vars: '{"domain_name":"${{ vars.DOMAIN_NAME }}","api_allowed_cidrs":${{ vars.API_ALLOWED_CIDRS }},"alb_allowed_cidrs":${{ vars.ALB_ALLOWED_CIDRS }}}'
-      runner_ip_variable: api_allowed_cidrs
-      cluster_name: platform-demo
+      role_to_assume: ${{ vars.AWS_PLAN_ROLE_ARN }}
+      tf_vars: '{"alb_allowed_cidrs":${{ vars.ALB_ALLOWED_CIDRS }}}'
       reason: ${{ inputs.reason }}
+
+  apply:
+    needs: plan
+    if: needs.plan.outputs.has_changes == 'true'
+    permissions:
+      contents: read
+      id-token: write
+    uses: platform-boutique/platform-demo-workflows/.github/workflows/terraform-apply.yaml@6a49ba88524957cd78604d05bc98accb7cd46975 # v3.0.2
+    with:
+      working_directory: stacks/platform
+      state_bucket: ${{ vars.TF_STATE_BUCKET }}
+      plan_role_to_assume: ${{ vars.AWS_PLAN_ROLE_ARN }}
+      role_to_assume: ${{ vars.AWS_APPLY_ROLE_ARN }}
+      plan_id: ${{ needs.plan.outputs.plan_id }}
       environment: production
-    secrets:
-      AWS_ACCESS_KEY_ID: ${{ secrets.AWS_ACCESS_KEY_ID }}
-      AWS_SECRET_ACCESS_KEY: ${{ secrets.AWS_SECRET_ACCESS_KEY }}

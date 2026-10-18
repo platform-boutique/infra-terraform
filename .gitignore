@@ -10,10 +10,11 @@ override.tf.json
 *_override.tf.json
 .terraformrc
 terraform.rc
-# Per-person settings (see the *.example files); the lock files ARE committed
+# Values of the environment are committed (<stack>.auto.tfvars, loaded automatically). Values of a person (their own IP) are not:
+# put them in local.auto.tfvars next to it. The lock files ARE committed.
 *.tfvars
-!*.tfvars.example
-backend.hcl
+!*.auto.tfvars
+local.auto.tfvars
 tfplan
 *.tfplan
 .external_modules/
