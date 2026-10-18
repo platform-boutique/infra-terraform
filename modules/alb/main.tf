@@ -52,6 +52,10 @@ resource "aws_vpc_security_group_ingress_rule" "nodes_from_alb" {
 }
 
 resource "aws_lb" "this" {
+  #checkov:skip=CKV_AWS_91:No access-log bucket in this test environment (it would be one more resource to keep and destroy); add one with the domain and a long-lived platform.
+  #checkov:skip=CKV_AWS_150:Created and destroyed on demand to save cost; deletion_protection is a variable to switch on once the platform is long-lived.
+  #checkov:skip=CKV2_AWS_20:No HTTPS without a domain (an ACM certificate needs one), so there is nothing to redirect to yet.
+  #checkov:skip=CKV2_AWS_28:Reachable only from allowed_cidrs (the maintainer's address); a WAF is not worth its cost in a test environment.
   name               = var.name
   load_balancer_type = "application"
   internal           = false
@@ -67,6 +71,7 @@ resource "aws_lb" "this" {
 }
 
 resource "aws_lb_target_group" "gateway" {
+  #checkov:skip=CKV_AWS_378:HTTP between the ALB and the nodes inside the VPC; the ALB's own HTTPS listener comes with a domain.
   name        = "${var.name}-gw"
   vpc_id      = var.vpc_id
   target_type = "instance"
@@ -92,6 +97,8 @@ resource "aws_lb_target_group" "gateway" {
 }
 
 resource "aws_lb_listener" "http" {
+  #checkov:skip=CKV_AWS_2:No domain, so no ACM certificate, so HTTP only; reachable from allowed_cidrs (the maintainer's address) only.
+  #checkov:skip=CKV_AWS_103:Applies to HTTPS listeners; this one is HTTP until there is a domain.
   load_balancer_arn = aws_lb.this.arn
   port              = 80
   protocol          = "HTTP"
@@ -105,6 +112,7 @@ resource "aws_lb_listener" "http" {
 }
 
 resource "aws_autoscaling_attachment" "gateway" {
+  #checkov:skip=CKV2_AWS_15:The Auto Scaling group belongs to the EKS managed node group, which sets its own health checks; it cannot be changed from here.
   for_each = var.autoscaling_group_names
 
   autoscaling_group_name = each.value

@@ -1,0 +1,30 @@
+name: Deploy
+
+# Builds or updates the platform: init on the remote state, plan, apply. Started by hand (Actions -> Deploy -> Run workflow) and waits for
+# an approval on the "production" environment before it changes anything, so no push or merge can create costs by surprise.
+# To deploy on every merge to main instead, add:  push: { branches: [main] }  under "on:".
+on:
+  workflow_dispatch:
+
+permissions: {}
+
+concurrency:
+  group: terraform-platform
+  cancel-in-progress: false
+
+jobs:
+  apply:
+    permissions:
+      contents: read
+      id-token: write
+    uses: platform-boutique/platform-demo-workflows/.github/workflows/terraform-apply.yaml@80e9e712bf83293b704a87a070c82608703bbbae # feat/terraform-workflows, becomes v2.1.0
+    with:
+      working_directory: envs/platform
+      state_bucket: ${{ vars.TF_STATE_BUCKET }}
+      tf_vars: '{"api_allowed_cidrs":${{ vars.API_ALLOWED_CIDRS }},"alb_allowed_cidrs":${{ vars.ALB_ALLOWED_CIDRS }}}'
+      runner_ip_variable: api_allowed_cidrs
+      cluster_name: platform-demo
+      environment: production
+    secrets:
+      AWS_ACCESS_KEY_ID: ${{ secrets.AWS_ACCESS_KEY_ID }}
+      AWS_SECRET_ACCESS_KEY: ${{ secrets.AWS_SECRET_ACCESS_KEY }}

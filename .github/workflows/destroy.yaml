@@ -1,0 +1,42 @@
+name: Destroy
+
+# Tears the platform down (for cost). Started by hand, needs the confirmation typed exactly, then waits for an approval on the
+# "destruction" environment. It first removes what runs inside the cluster (Argo CD apps, PVCs, LoadBalancer Services), then destroys,
+# then lists what is left in the account. The state bucket (bootstrap/) is never touched.
+on:
+  workflow_dispatch:
+    inputs:
+      confirm:
+        description: 'Type exactly: destroy platform-demo'
+        type: string
+        required: true
+      delete_leftover_volumes:
+        description: Also delete unattached EBS volumes the EBS CSI driver created (tag ebs.csi.aws.com/cluster=true)
+        type: boolean
+        default: false
+
+permissions: {}
+
+concurrency:
+  group: terraform-platform
+  cancel-in-progress: false
+
+jobs:
+  destroy:
+    permissions:
+      contents: read
+      id-token: write
+    uses: platform-boutique/platform-demo-workflows/.github/workflows/terraform-destroy.yaml@80e9e712bf83293b704a87a070c82608703bbbae # feat/terraform-workflows, becomes v2.1.0
+    with:
+      confirmation: ${{ inputs.confirm }}
+      expected_confirmation: destroy platform-demo
+      working_directory: envs/platform
+      state_bucket: ${{ vars.TF_STATE_BUCKET }}
+      tf_vars: '{"api_allowed_cidrs":${{ vars.API_ALLOWED_CIDRS }},"alb_allowed_cidrs":${{ vars.ALB_ALLOWED_CIDRS }}}'
+      runner_ip_variable: api_allowed_cidrs
+      cluster_name: platform-demo
+      delete_leftover_volumes: ${{ inputs.delete_leftover_volumes }}
+      environment: destruction
+    secrets:
+      AWS_ACCESS_KEY_ID: ${{ secrets.AWS_ACCESS_KEY_ID }}
+      AWS_SECRET_ACCESS_KEY: ${{ secrets.AWS_SECRET_ACCESS_KEY }}

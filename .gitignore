@@ -16,3 +16,4 @@ terraform.rc
 backend.hcl
 tfplan
 *.tfplan
+.external_modules/

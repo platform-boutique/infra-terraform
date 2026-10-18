@@ -49,4 +49,4 @@ raise it with a kubelet setting if the cluster ever runs out of pod slots.
 
 EKS access entries, no `aws-auth` ConfigMap. The identity that runs Terraform is cluster-admin; add others with `admin_principal_arns`.
 The public API endpoint is restricted to `api_allowed_cidrs`; the private endpoint is on for the nodes. Secrets are encrypted with a
-customer-managed KMS key. The control plane logs (api, audit, authenticator) go to CloudWatch for 30 days.
+customer-managed KMS key. The control plane logs (all five types) go to CloudWatch for 30 days.

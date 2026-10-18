@@ -14,12 +14,16 @@ provider "aws" {
 }
 
 data "aws_caller_identity" "current" {}
+data "aws_partition" "current" {}
 
 locals {
   bucket_name = "${var.name}-tfstate-${data.aws_caller_identity.current.account_id}-${var.region}"
 }
 
 resource "aws_s3_bucket" "state" {
+  #checkov:skip=CKV_AWS_18:Access logging needs another bucket; the state bucket is private, versioned and used by one account.
+  #checkov:skip=CKV_AWS_144:Cross-region replication is not worth its cost for the state of a test environment; versioning protects against overwrites.
+  #checkov:skip=CKV2_AWS_62:No consumer of bucket events.
   bucket = local.bucket_name
 
   lifecycle {
@@ -36,10 +40,28 @@ resource "aws_s3_bucket_versioning" "state" {
 }
 
 # State holds secrets (generated passwords, certificate material): encrypt it with a customer-managed key that rotates every year.
+# The key policy says what the default one says (the account's IAM policies decide who may use the key), written out so it is reviewable.
+data "aws_iam_policy_document" "state_key" {
+  #checkov:skip=CKV_AWS_109:This is the standard KMS key policy: the account root delegates to IAM, which decides who may use the key. It is not a grant to anyone.
+  #checkov:skip=CKV_AWS_111:Same: the standard delegating key policy.
+  #checkov:skip=CKV_AWS_356:A key policy's Resource is always "*" (the key itself).
+  statement {
+    sid       = "EnableIAMPolicies"
+    actions   = ["kms:*"]
+    resources = ["*"]
+
+    principals {
+      type        = "AWS"
+      identifiers = ["arn:${data.aws_partition.current.partition}:iam::${data.aws_caller_identity.current.account_id}:root"]
+    }
+  }
+}
+
 resource "aws_kms_key" "state" {
   description             = "Terraform state of ${var.name}"
   enable_key_rotation     = true
   deletion_window_in_days = 30
+  policy                  = data.aws_iam_policy_document.state_key.json
 }
 
 resource "aws_kms_alias" "state" {
@@ -80,6 +102,10 @@ resource "aws_s3_bucket_lifecycle_configuration" "state" {
 
     noncurrent_version_expiration {
       noncurrent_days = 90
+    }
+
+    abort_incomplete_multipart_upload {
+      days_after_initiation = 7
     }
   }
 }

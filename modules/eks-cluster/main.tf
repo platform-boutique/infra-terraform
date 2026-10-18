@@ -49,7 +49,7 @@ module "eks" {
   create_kms_key                  = true
   kms_key_deletion_window_in_days = 7
 
-  enabled_log_types                      = ["api", "audit", "authenticator"]
+  enabled_log_types                      = ["api", "audit", "authenticator", "controllerManager", "scheduler"]
   cloudwatch_log_group_retention_in_days = var.log_retention_days
 
   # No add-ons here (see the header) and no node groups.

@@ -10,7 +10,6 @@ data "aws_partition" "current" {}
 
 locals {
   parameter_arn_base = "arn:${data.aws_partition.current.partition}:ssm:${data.aws_region.current.region}:${data.aws_caller_identity.current.account_id}:parameter${var.parameter_prefix}"
-  service_account    = split("/", var.service_account)
 }
 
 data "aws_iam_policy_document" "assume" {

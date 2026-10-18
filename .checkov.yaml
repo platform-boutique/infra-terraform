@@ -1,0 +1,11 @@
+# Checkov scans this repository's own Terraform (the community modules are pinned and scanned by Trivy and upstream).
+# Accepted risks are written next to the resource: #checkov:skip=<ID>:<reason>. The one exception, in this file, applies everywhere:
+framework:
+  - terraform
+download-external-modules: false
+skip-path:
+  - .terraform
+  - .external_modules
+skip-check:
+  # Registry modules are pinned to an exact version (and Dependabot proposes updates); a registry source cannot be pinned to a commit.
+  - CKV_TF_1

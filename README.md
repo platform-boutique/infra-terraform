@@ -30,7 +30,10 @@ internet --:80--> ALB (public /24 subnets, 2 zones) --:8080--> nodes (private /2
 Credentials never go into this repository (it is public): they live in `~/.aws/credentials`, outside it (docs/operations.md). Secrets such as
 the GitHub OAuth App's are typed once into Parameter Store (docs/secrets.md).
 
-## Build it
+## Build it (from the pipeline, or by hand)
+
+The pipeline (`docs/pipeline.md`) does all of this from GitHub Actions: **Bootstrap** once, then **Deploy** (approval), **Destroy** when you want the cost to stop.
+By hand:
 
 ```bash
 # 1. State bucket (once)
