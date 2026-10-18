@@ -28,6 +28,17 @@ variable "kubernetes_version" {
   default     = "1.36"
 }
 
+variable "domain_name" {
+  description = "The registered domain (Route 53 -> Registered domains). Its hosted zone and its certificate (envs/foundation) must exist."
+  type        = string
+}
+
+variable "hostnames" {
+  description = "Host names under the domain that point at the load balancer, one per platform UI."
+  type        = list(string)
+  default     = ["argocd", "backstage", "grafana", "dex", "hubble", "shop"]
+}
+
 variable "api_allowed_cidrs" {
   description = "CIDRs allowed to reach the public Kubernetes API endpoint: your own address as /32, for example [\"203.0.113.7/32\"]."
   type        = list(string)

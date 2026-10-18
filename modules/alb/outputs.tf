@@ -3,6 +3,11 @@ output "dns_name" {
   value       = aws_lb.this.dns_name
 }
 
+output "zone_id" {
+  description = "Route 53 zone ID of the load balancer (alias records need it)."
+  value       = aws_lb.this.zone_id
+}
+
 output "arn" {
   description = "ARN of the load balancer."
   value       = aws_lb.this.arn

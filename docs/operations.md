@@ -9,6 +9,8 @@ Prefer IAM Identity Center (SSO) over long-lived keys when the account has it; d
 
 ## First build
 
+Order: **Bootstrap** (state bucket), **Foundation** (certificate for the domain; needs the registered domain's hosted zone), then **Deploy**.
+
 See the README: `bootstrap/` once (state bucket), then `envs/platform/`: `init -backend-config=backend.hcl`, `plan`, `apply`.
 Allow about 20 minutes: network 2, control plane 10, nodes 5, add-ons 3.
 

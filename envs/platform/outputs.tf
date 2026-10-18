@@ -4,8 +4,13 @@ output "alb_dns_name" {
 }
 
 output "alb_url" {
-  description = "The same as a URL."
-  value       = "http://${module.alb.dns_name}"
+  description = "The ALB's own address (it answers on the host names below; its certificate is for the domain)."
+  value       = "https://${module.alb.dns_name}"
+}
+
+output "urls" {
+  description = "The platform's UIs."
+  value       = { for k, v in module.dns.fqdns : k => "https://${v}" }
 }
 
 output "gateway_port" {
