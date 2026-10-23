@@ -1,0 +1,9 @@
+# Set by Terraform (modules/argocd-bootstrap); only the shape of the values.
+argocd:
+  namespace: argocd
+externalSecrets:
+  namespace: external-secrets
+  serviceAccount: external-secrets
+  # IAM role of the service account (eks.amazonaws.com/role-arn). Known only to Terraform: it contains the account id, which is why the
+  # account is created here and not by the External Secrets chart in Git.
+  roleArn: ""

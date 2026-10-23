@@ -66,7 +66,7 @@ data "aws_iam_policy_document" "read_secrets" {
   }
 
   # Secrets Manager secrets that Terraform-made resources keep by themselves (the RDS master user secret): read-only, on the exact ARNs.
-  # No wildcard and no ListSecrets, so the role cannot discover or read any other secret.
+  # Reading is limited to those ARNs, so the role cannot read any other secret.
   dynamic "statement" {
     for_each = length(var.secret_arns) > 0 ? [1] : []
 
@@ -77,6 +77,18 @@ data "aws_iam_policy_document" "read_secrets" {
         "secretsmanager:DescribeSecret",
       ]
       resources = var.secret_arns
+    }
+  }
+
+  # The RDS secret is named `rds!db-<random id>` and the id changes with every new database, so the External Secrets Operator FINDS it by
+  # name (ListSecrets) instead of having the id written into Git. ListSecrets cannot be limited to a resource; it returns names, not values.
+  dynamic "statement" {
+    for_each = length(var.secret_arns) > 0 ? [1] : []
+
+    content {
+      sid       = "FindNamedSecrets"
+      actions   = ["secretsmanager:ListSecrets"]
+      resources = ["*"]
     }
   }
 

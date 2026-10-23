@@ -69,8 +69,9 @@ module "eks" {
   # No add-ons here (see the header) and no node groups.
   addons = {}
 
-  # Cilium's overlay: VXLAN between the nodes (UDP 8472) and ICMP for its health checks. The module's recommended rules already
-  # allow the TCP ports (Cilium health, Hubble, Envoy) between nodes and from the control plane to the nodes.
+  # Cilium's overlay: VXLAN between the nodes (UDP 8472), WireGuard (UDP 51871) and ICMP for its health checks. The module's
+  # recommended rules already allow the TCP ports (Cilium health, Hubble peer 4244, SPIRE/authentication 4250, Envoy) between nodes
+  # (ephemeral range 1025-65535) and from the control plane to the nodes. UDP is not covered by them, hence the rules below.
   node_security_group_additional_rules = {
     ingress_cilium_vxlan = {
       description = "Cilium VXLAN overlay between nodes"
@@ -78,6 +79,16 @@ module "eks" {
       protocol    = "udp"
       from_port   = 8472
       to_port     = 8472
+      self        = true
+    }
+    # Cilium's WireGuard encryption (modules/cilium, encryption_enabled): each node sends UDP to port 51871 of the others. The
+    # rule is always present (open only to the nodes themselves, so it costs nothing when encryption is off).
+    ingress_cilium_wireguard = {
+      description = "Cilium WireGuard encryption between nodes"
+      type        = "ingress"
+      protocol    = "udp"
+      from_port   = 51871
+      to_port     = 51871
       self        = true
     }
     ingress_cilium_icmp = {

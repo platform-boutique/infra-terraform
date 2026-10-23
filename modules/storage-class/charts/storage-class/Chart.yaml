@@ -1,0 +1,5 @@
+apiVersion: v2
+name: storage-class
+description: One StorageClass backed by the EBS CSI driver (gp3, encrypted), so Terraform can create it with the Helm provider before Argo CD exists.
+type: application
+version: 1.0.0

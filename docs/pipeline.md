@@ -8,7 +8,7 @@ The workflows are thin callers of the shared Terraform pipeline in `platform-dem
 | **CI** (`ci.yaml`) | every pull request | secret scan, workflow lint, `fmt` + `validate`, **TFLint**, **Trivy**, **Checkov**, an **Infracost** estimate and a **plan** as a comment. Changes nothing in AWS (read-only role). |
 | **Foundation** (`foundation.yaml`) | by hand, once | plans the certificate, then reviews and applies that plan after your approval. Destroy never touches it. |
 | **Deploy** (`deploy.yaml`) | by hand, with a reason | one run: **Plan** (saved, shows your reason and what would change), **Review** (checks the saved plan and shows it again), then **Apply**, which waits for your approval on the `production` environment and applies exactly that plan. |
-| **Destroy** (`destroy.yaml`) | by hand, reason + `destroy platform-demo` | the same three steps for `stacks/platform`; approval on the `destruction` environment. Before the destroy `scripts/destroy-prepare.sh` empties the cluster; afterwards `scripts/destroy-verify.sh` lists leftovers. |
+| **Destroy** (`destroy.yaml`) | by hand, reason + `destroy platform-demo` | the same three steps for `stacks/platform`; approval on the `destruction` environment. Before the destroy `scripts/destroy-prepare.sh` empties the cluster (Argo CD's Applications without pruning Argo CD itself, the SPIRE server, the PersistentVolumeClaims and their EBS volumes, Services of type LoadBalancer; it has time limits and cannot hang); afterwards `scripts/destroy-verify.sh` lists leftovers. |
 
 ## What you approve is what runs
 

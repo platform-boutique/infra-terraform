@@ -27,9 +27,12 @@ it. Created in the console, the value never touches Git or the state, and it sur
 ## How the cluster gets them
 
 `module.secrets_access` creates an IAM role, `<cluster>-external-secrets`, that may read **only** `/platform-demo/*` (and decrypt through
-Systems Manager). The External Secrets Operator, installed through GitOps with its service account annotated with that role
-(`terraform output external_secrets_role_arn`), turns the parameters into the Kubernetes Secrets the charts expect
-(`sso/dex-secrets`, `backstage/backstage-secrets`).
+Systems Manager). The External Secrets Operator is installed through GitOps, but its **service account is created by Terraform**
+(`modules/argocd-bootstrap`): `external-secrets/external-secrets`, annotated with that role (`terraform output external_secrets_role_arn`).
+The role's ARN contains the AWS account id, which a public Git repository must never hold, so the operator's chart in Git runs with
+`serviceAccount.create=false` and `serviceAccount.name=external-secrets`, in the namespace `external-secrets` (which Terraform also creates, with
+Pod Security `baseline`). The operator turns the parameters into the Kubernetes Secrets the charts expect (`sso/dex-secrets`,
+`backstage/backstage-secrets`).
 
 The role's prefix is `secrets_parameter_prefix` in `platform.auto.tfvars` (`/platform-demo`). The GitHub OAuth App's callback URL is the HTTPS address
 Dex is served on: **`https://dex.platform-demo.click/callback`** (see [the ALB and the Gateway](alb-and-gateway.md)).
@@ -71,3 +74,7 @@ switched off in a separate, reviewed change. Cross-region replicas, Performance 
 **The pipeline's plan role** may not read Parameter Store values (it is read-only and any branch can run a plan), except the
 `/platform-demo/rds/*` parameters, which hold no secret and which Terraform has to refresh. That exception is in `stacks/bootstrap`
 (`github-oidc.tf`) and takes effect when `scripts/bootstrap.sh` is run again. The Secrets Manager values stay denied.
+
+## The database password is found by name
+
+RDS keeps the master password in a Secrets Manager secret named `rds!db-<random id>`, and the id changes every time the database is built, so it cannot be written down in Git. The External Secrets Operator therefore **finds** the secret by that name pattern (an ExternalSecret with `dataFrom.find`, in the Helm repository's `external-secrets-config`). This needs `secretsmanager:ListSecrets` (names only; it cannot be limited to a resource); reading a value stays limited to the exact ARN of the database's secret, and decrypting to its own KMS key.

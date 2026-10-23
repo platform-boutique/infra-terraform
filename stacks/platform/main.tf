@@ -75,6 +75,13 @@ module "cilium" {
   gateway_crds_sha256 = var.gateway_crds_sha256
   pod_cidr            = var.pod_cidr
 
+  # SPIRE mutual authentication and WireGuard encryption (the restart that makes Cilium use its SPIFFE identity is done by GitOps).
+  mutual_authentication_enabled = var.cilium_mutual_authentication_enabled
+  spire_storage_class_name      = var.storage_class_name
+  spire_data_size               = var.spire_data_size
+  encryption_enabled            = var.cilium_encryption_enabled
+  node_encryption_enabled       = var.cilium_node_encryption_enabled
+
   depends_on = [module.eks_cluster]
 }
 
@@ -129,6 +136,7 @@ module "alb" {
   vpc_id                  = module.network.vpc_id
   subnet_ids              = module.network.public_subnet_ids
   allowed_cidrs           = var.alb_allowed_cidrs
+  internal_cidrs          = [for ip in module.network.nat_public_ips : "${ip}/32"] # pods reach https://dex.<domain> via NAT -> ALB
   gateway_port            = var.gateway_port
   node_security_group_id  = module.eks_cluster.node_security_group_id
   autoscaling_group_names = module.eks_nodes.autoscaling_group_names
@@ -153,6 +161,7 @@ module "secrets_access" {
   oidc_provider_arn = module.eks_cluster.oidc_provider_arn
   oidc_provider     = module.eks_cluster.oidc_provider
   parameter_prefix  = var.secrets_parameter_prefix
+  service_account   = var.external_secrets_service_account # the account module.argocd_bootstrap creates
 
   # Also read-only access to the one Secrets Manager secret RDS keeps the database password in, and decrypt it (see "The database").
   secret_arns         = [module.database.master_user_secret_arn]
@@ -184,3 +193,55 @@ module "database" {
   log_retention_days        = var.log_retention_days
   connection_parameter_path = "${var.secrets_parameter_prefix}/rds/backstage"
 }
+
+# ==================================================================================================================================
+# BEGIN section: storage class and Argo CD bootstrap (feat/spire-and-argocd-bootstrap). Appended at the end on purpose.
+# Order: eks_cluster -> cilium -> eks_nodes -> storage_class -> argocd_bootstrap, then Git (Argo CD) takes over.
+# ==================================================================================================================================
+
+locals {
+  # Argo CD is served at argocd.<domain> (the host name modules/dns points at the ALB and the Helm repository's HTTPRoute matches).
+  argocd_hostname = "argocd.${var.domain_name}"
+}
+
+check "argocd_hostname_is_published" {
+  assert {
+    condition     = contains(var.hostnames, "argocd")
+    error_message = "hostnames must contain \"argocd\": Argo CD is reached only through the Gateway, at argocd.<domain>."
+  }
+}
+
+# 7. The default StorageClass (gp3, encrypted). After the nodes module: that is where the EBS CSI driver is installed. The SPIRE server's
+#    claim (created earlier, by Cilium) is Pending until this class exists, then binds by itself.
+module "storage_class" {
+  source = "../../modules/storage-class"
+
+  name                = var.storage_class_name
+  make_default        = true
+  demote_legacy_class = true
+  legacy_class_name   = "gp2"
+
+  depends_on = [module.eks_nodes]
+}
+
+# 8. Argo CD, the root Application, the namespaces and the External Secrets service account. The last thing Terraform puts in the
+#    cluster: from here Git (platform-demo-helm, gitops/) deploys everything else and Argo CD manages itself.
+module "argocd_bootstrap" {
+  source = "../../modules/argocd-bootstrap"
+
+  argocd_chart_version = var.argocd_chart_version
+  hostname             = local.argocd_hostname
+  admin_enabled        = var.argocd_admin_enabled
+
+  git_repo_url = var.gitops_repo_url
+  git_revision = var.gitops_revision
+  git_path     = var.gitops_path
+
+  external_secrets_service_account = var.external_secrets_service_account
+  external_secrets_role_arn        = module.secrets_access.role_arn
+
+  # Nodes Ready, Cilium running, CoreDNS and the EBS CSI driver installed, the default StorageClass in place.
+  depends_on = [module.cilium, module.eks_nodes, module.storage_class]
+}
+
+# END section: storage class and Argo CD bootstrap

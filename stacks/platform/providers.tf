@@ -23,3 +23,17 @@ provider "helm" {
     exec                   = local.exec_auth
   }
 }
+
+# The Kubernetes provider is used for exactly one thing: removing the default-class annotation from EKS's own gp2 StorageClass
+# (modules/storage-class), which Helm cannot do because EKS, not a Helm release, owns that object. Everything else goes through Helm
+# (the one provider that can plan before the cluster exists). Same cluster, same authentication.
+provider "kubernetes" {
+  host                   = module.eks_cluster.endpoint
+  cluster_ca_certificate = base64decode(module.eks_cluster.certificate_authority_data)
+
+  exec {
+    api_version = local.exec_auth.api_version
+    command     = local.exec_auth.command
+    args        = local.exec_auth.args
+  }
+}

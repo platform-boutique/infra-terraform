@@ -39,3 +39,7 @@ listens on 8080, the targets are unhealthy and the ALB answers `503`.
 Anyone can still create a Service of type `LoadBalancer` in the cluster, and EKS would then create a Classic Load Balancer for it, which
 Terraform does not know about and which blocks `terraform destroy` of the VPC. A Kyverno policy that denies Services of type
 `LoadBalancer` in every namespace closes this; see the Helm repository's policies.
+
+## Pods reach the platform's own host names through the ALB
+
+Argo CD and Backstage talk to Dex at its public address, `https://dex.<domain>`. From a pod that goes out through a NAT gateway and back in through the ALB, so the ALB's security group also admits the NAT gateways' public addresses on port 443 (`internal_cidrs` of `modules/alb`, filled from `module.network.nat_public_ips`), not only your own address. Without that, single sign-on cannot work.

@@ -185,3 +185,62 @@ variable "gvisor_platform" {
   description = "gVisor platform: systrap works on ordinary EC2 instances (no KVM); kvm needs bare metal or nested virtualization."
   type        = string
 }
+
+# ---- BEGIN section: Cilium security, storage class, Argo CD bootstrap (feat/spire-and-argocd-bootstrap) --------------------------
+
+variable "cilium_mutual_authentication_enabled" {
+  description = "Install SPIRE with Cilium and enable mutual authentication (SPIFFE). Beta, deprecated in Cilium 1.20. After the first build GitOps restarts Cilium once the SPIRE server is Ready."
+  type        = bool
+}
+
+variable "spire_data_size" {
+  description = "Size of the SPIRE server's gp3 volume."
+  type        = string
+}
+
+variable "cilium_encryption_enabled" {
+  description = "Transparent WireGuard encryption between the nodes (UDP 51871, a kernel with WireGuard). Switch off if the Cilium agents cannot create the cilium_wg0 device."
+  type        = bool
+}
+
+variable "cilium_node_encryption_enabled" {
+  description = "Also encrypt node-to-node traffic, which covers the Gateway's host-network Envoy (beta in Cilium). Only effective with cilium_encryption_enabled."
+  type        = bool
+}
+
+variable "storage_class_name" {
+  description = "Name of the default StorageClass Terraform creates (gp3 on the EBS CSI driver). The SPIRE server's claim names it explicitly; charts that set no class get it as the default."
+  type        = string
+}
+
+variable "argocd_chart_version" {
+  description = "Version of the argo/argo-cd chart for the bootstrap install: the same as targetRevision in gitops/apps/application-argocd.yaml of the Helm repository. Only read when the release is created; Argo CD upgrades itself from Git afterwards."
+  type        = string
+}
+
+variable "argocd_admin_enabled" {
+  description = "Keep Argo CD's built-in admin account (and its initial password Secret) during the bootstrap, until Git switches it off. false: nobody has a password; break-glass is `argocd --core`. Only read when the release is created."
+  type        = bool
+}
+
+variable "gitops_repo_url" {
+  description = "Git repository of the root Application (the Helm repository, gitops/apps)."
+  type        = string
+}
+
+variable "gitops_revision" {
+  description = "Branch, tag or commit the root Application follows."
+  type        = string
+}
+
+variable "gitops_path" {
+  description = "Directory of that repository the root Application syncs."
+  type        = string
+}
+
+variable "external_secrets_service_account" {
+  description = "namespace/name of the External Secrets Operator's service account: created by Terraform with the IAM role annotation (the chart in Git runs with serviceAccount.create=false), and the only account the role trusts."
+  type        = string
+}
+
+# ---- END section ------------------------------------------------------------------------------------------------------------------
