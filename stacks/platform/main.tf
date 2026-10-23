@@ -99,6 +99,11 @@ module "eks_nodes" {
   max_size       = var.node_count + 2
   disk_size_gib  = var.node_disk_size_gib
 
+  # gVisor on every node (see the end of this file and docs/gvisor.md).
+  gvisor_release  = var.gvisor_release
+  gvisor_sha512   = var.gvisor_sha512
+  gvisor_platform = var.gvisor_platform
+
   depends_on = [module.cilium]
 }
 
@@ -148,4 +153,34 @@ module "secrets_access" {
   oidc_provider_arn = module.eks_cluster.oidc_provider_arn
   oidc_provider     = module.eks_cluster.oidc_provider
   parameter_prefix  = var.secrets_parameter_prefix
+
+  # Also read-only access to the one Secrets Manager secret RDS keeps the database password in, and decrypt it (see "The database").
+  secret_arns         = [module.database.master_user_secret_arn]
+  secret_kms_key_arns = [module.database.kms_key_arn]
+}
+
+# ==================================================================================================================================
+# The database (Backstage's catalog): Multi-AZ RDS for PostgreSQL in the private subnets, reachable only from the nodes.
+# ==================================================================================================================================
+# The password never passes through Terraform: RDS keeps it in Secrets Manager (module.secrets_access lets the External Secrets role
+# read exactly that secret). Host, port, database and user are written as plain String parameters under
+# <secrets_parameter_prefix>/rds/backstage/, where GitOps reads them. See docs/secrets.md.
+module "database" {
+  source = "../../modules/database"
+
+  identifier                = "${var.name}-backstage"
+  vpc_id                    = module.network.vpc_id
+  subnet_ids                = module.network.private_subnet_ids
+  client_security_group_id  = module.eks_cluster.node_security_group_id
+  engine_version            = var.database_engine_version
+  instance_class            = var.database_instance_class
+  allocated_storage_gib     = var.database_allocated_storage_gib
+  max_allocated_storage_gib = var.database_max_allocated_storage_gib
+  database_name             = var.database_name
+  master_username           = var.database_username
+  backup_retention_days     = var.database_backup_retention_days
+  deletion_protection       = var.database_deletion_protection
+  skip_final_snapshot       = var.database_skip_final_snapshot
+  log_retention_days        = var.log_retention_days
+  connection_parameter_path = "${var.secrets_parameter_prefix}/rds/backstage"
 }

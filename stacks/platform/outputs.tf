@@ -47,3 +47,36 @@ output "secrets_parameter_prefix" {
   description = "Parameter Store path the External Secrets Operator may read."
   value       = module.secrets_access.parameter_prefix
 }
+
+# ==================================================================================================================================
+# The database
+# ==================================================================================================================================
+output "database_host" {
+  description = "Host name of Backstage's PostgreSQL database (also in Parameter Store under database_connection_parameter_path)."
+  value       = module.database.address
+}
+
+output "database_port" {
+  description = "Port of the database."
+  value       = module.database.port
+}
+
+output "database_name" {
+  description = "Name of the database."
+  value       = module.database.database_name
+}
+
+output "database_username" {
+  description = "Master user of the database (its password is only in the Secrets Manager secret below)."
+  value       = module.database.username
+}
+
+output "database_secret_arn" {
+  description = "Secrets Manager secret RDS keeps the master password in (JSON keys username and password, rotated every 7 days). The External Secrets role may read it."
+  value       = module.database.master_user_secret_arn
+}
+
+output "database_connection_parameter_path" {
+  description = "Parameter Store path of the non-secret connection details: <path>/host, /port, /database, /username."
+  value       = module.database.connection_parameter_path
+}
