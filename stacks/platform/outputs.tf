@@ -47,3 +47,68 @@ output "secrets_parameter_prefix" {
   description = "Parameter Store path the External Secrets Operator may read."
   value       = module.secrets_access.parameter_prefix
 }
+
+# ==================================================================================================================================
+# The database
+# ==================================================================================================================================
+output "database_host" {
+  description = "Host name of Backstage's PostgreSQL database (also in Parameter Store under database_connection_parameter_path)."
+  value       = module.database.address
+}
+
+output "database_port" {
+  description = "Port of the database."
+  value       = module.database.port
+}
+
+output "database_name" {
+  description = "Name of the database."
+  value       = module.database.database_name
+}
+
+output "database_username" {
+  description = "Master user of the database (its password is only in the Secrets Manager secret below)."
+  value       = module.database.username
+}
+
+output "database_secret_arn" {
+  description = "Secrets Manager secret RDS keeps the master password in (JSON keys username and password, rotated every 7 days). The External Secrets role may read it."
+  value       = module.database.master_user_secret_arn
+}
+
+output "database_connection_parameter_path" {
+  description = "Parameter Store path of the non-secret connection details: <path>/host, /port, /database, /username."
+  value       = module.database.connection_parameter_path
+}
+
+# ---- BEGIN section: Cilium security, storage class, Argo CD bootstrap (feat/spire-and-argocd-bootstrap) --------------------------
+
+output "argocd_url" {
+  description = "Argo CD, reachable only through the ALB and the Gateway (it answers once Git has created the Gateway and HTTPRoute)."
+  value       = "https://${local.argocd_hostname}"
+}
+
+output "argocd_initial_access" {
+  description = "How a person first gets into Argo CD, and the break-glass path."
+  value       = <<-EOT
+    Normal: https://${local.argocd_hostname} -> "Log in via Dex" (GitHub). Needs Dex, the External Secrets Operator and the GitHub OAuth App secrets in Parameter Store (docs/secrets.md).
+    There is no admin account (argocd_admin_enabled = ${var.argocd_admin_enabled}; Git switches it off anyway).
+    Break-glass, with no password and no Dex (your IAM identity must be a cluster admin, see admin_user_names):
+      aws eks update-kubeconfig --name ${module.eks_cluster.name} --region ${var.region}
+      kubectl config set-context --current --namespace=argocd
+      argocd app list --core          # the CLI talks to the Kubernetes API directly, as you
+    Details: docs/operations.md, "Getting into Argo CD".
+  EOT
+}
+
+output "storage_class_name" {
+  description = "The default StorageClass created by Terraform."
+  value       = module.storage_class.name
+}
+
+output "external_secrets_service_account" {
+  description = "namespace/name of the pre-created, IAM-annotated External Secrets service account (the chart in Git must use it with serviceAccount.create=false)."
+  value       = "${module.argocd_bootstrap.external_secrets_namespace}/${module.argocd_bootstrap.external_secrets_service_account}"
+}
+
+# ---- END section ------------------------------------------------------------------------------------------------------------------

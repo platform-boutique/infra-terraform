@@ -119,3 +119,128 @@ variable "secrets_parameter_prefix" {
   description = "Parameter Store path of the platform's secrets (created by hand in the console, see docs/secrets.md)."
   type        = string
 }
+
+# ==================================================================================================================================
+# The database
+# ==================================================================================================================================
+variable "database_engine_version" {
+  description = "PostgreSQL version of the RDS instance (17.x; RDS applies later minor versions by itself)."
+  type        = string
+}
+
+variable "database_instance_class" {
+  description = "RDS instance class."
+  type        = string
+}
+
+variable "database_allocated_storage_gib" {
+  description = "Initial size of the database's gp3 volume (at least 20)."
+  type        = number
+}
+
+variable "database_max_allocated_storage_gib" {
+  description = "Storage autoscaling limit of the database; 0 turns autoscaling off."
+  type        = number
+}
+
+variable "database_name" {
+  description = "Name of the database Backstage uses."
+  type        = string
+}
+
+variable "database_username" {
+  description = "Master user of the database. Its password is generated and kept by RDS in Secrets Manager."
+  type        = string
+}
+
+variable "database_backup_retention_days" {
+  description = "Days the database's automated backups are kept."
+  type        = number
+}
+
+variable "database_deletion_protection" {
+  description = "Refuse to delete the database. False while the platform is ephemeral and destroyed on purpose; a production environment sets true."
+  type        = bool
+}
+
+variable "database_skip_final_snapshot" {
+  description = "Skip the database's final snapshot on deletion. True while the platform is ephemeral; a production environment sets false."
+  type        = bool
+}
+
+# ==================================================================================================================================
+# gVisor (sandboxed runtime on every node)
+# ==================================================================================================================================
+variable "gvisor_release" {
+  description = "gVisor release installed on every node (gs://gvisor/releases/release/<release>/x86_64/)."
+  type        = string
+}
+
+variable "gvisor_sha512" {
+  description = "SHA-512 of that release's gvisor.tar.bz2, as published next to it: the node refuses a download that differs."
+  type        = string
+}
+
+variable "gvisor_platform" {
+  description = "gVisor platform: systrap works on ordinary EC2 instances (no KVM); kvm needs bare metal or nested virtualization."
+  type        = string
+}
+
+# ---- BEGIN section: Cilium security, storage class, Argo CD bootstrap (feat/spire-and-argocd-bootstrap) --------------------------
+
+variable "cilium_mutual_authentication_enabled" {
+  description = "Install SPIRE with Cilium and enable mutual authentication (SPIFFE). Beta, deprecated in Cilium 1.20. After the first build GitOps restarts Cilium once the SPIRE server is Ready."
+  type        = bool
+}
+
+variable "spire_data_size" {
+  description = "Size of the SPIRE server's gp3 volume."
+  type        = string
+}
+
+variable "cilium_encryption_enabled" {
+  description = "Transparent WireGuard encryption between the nodes (UDP 51871, a kernel with WireGuard). Switch off if the Cilium agents cannot create the cilium_wg0 device."
+  type        = bool
+}
+
+variable "cilium_node_encryption_enabled" {
+  description = "Also encrypt node-to-node traffic, which covers the Gateway's host-network Envoy (beta in Cilium). Only effective with cilium_encryption_enabled."
+  type        = bool
+}
+
+variable "storage_class_name" {
+  description = "Name of the default StorageClass Terraform creates (gp3 on the EBS CSI driver). The SPIRE server's claim names it explicitly; charts that set no class get it as the default."
+  type        = string
+}
+
+variable "argocd_chart_version" {
+  description = "Version of the argo/argo-cd chart for the bootstrap install: the same as targetRevision in gitops/apps/application-argocd.yaml of the Helm repository. Only read when the release is created; Argo CD upgrades itself from Git afterwards."
+  type        = string
+}
+
+variable "argocd_admin_enabled" {
+  description = "Keep Argo CD's built-in admin account (and its initial password Secret) during the bootstrap, until Git switches it off. false: nobody has a password; break-glass is `argocd --core`. Only read when the release is created."
+  type        = bool
+}
+
+variable "gitops_repo_url" {
+  description = "Git repository of the root Application (the Helm repository, gitops/apps)."
+  type        = string
+}
+
+variable "gitops_revision" {
+  description = "Branch, tag or commit the root Application follows."
+  type        = string
+}
+
+variable "gitops_path" {
+  description = "Directory of that repository the root Application syncs."
+  type        = string
+}
+
+variable "external_secrets_service_account" {
+  description = "namespace/name of the External Secrets Operator's service account: created by Terraform with the IAM role annotation (the chart in Git runs with serviceAccount.create=false), and the only account the role trusts."
+  type        = string
+}
+
+# ---- END section ------------------------------------------------------------------------------------------------------------------

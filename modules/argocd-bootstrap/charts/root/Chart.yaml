@@ -1,0 +1,5 @@
+apiVersion: v2
+name: root
+description: The AppProject platform-admin and the root Application platform-root (the same objects as gitops/bootstrap/root.yaml of the Helm repository), so Terraform can create them with the Helm provider.
+type: application
+version: 1.0.0

@@ -1,0 +1,3 @@
+# Set by Terraform (modules/storage-class); these are only the shape of the values.
+name: gp3
+default: true

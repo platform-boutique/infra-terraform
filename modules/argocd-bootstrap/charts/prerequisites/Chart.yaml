@@ -1,0 +1,5 @@
+apiVersion: v2
+name: prerequisites
+description: The namespaces and the ServiceAccount that must exist before Git takes over (Argo CD, External Secrets), created by Terraform with the Helm provider.
+type: application
+version: 1.0.0

@@ -78,6 +78,36 @@ variable "disk_size_gib" {
   type        = number
 }
 
+variable "gvisor_release" {
+  description = "gVisor release installed on every node, as published in gs://gvisor/releases/release/<release>/x86_64/ (for example 20261019.0)."
+  type        = string
+
+  validation {
+    condition     = can(regex("^[0-9]{8}(\\.[0-9]+)?$", var.gvisor_release))
+    error_message = "gvisor_release must look like 20261019.0."
+  }
+}
+
+variable "gvisor_sha512" {
+  description = "SHA-512 of that release's gvisor.tar.bz2 (the .sha512 file next to it): the node refuses to install a download that differs."
+  type        = string
+
+  validation {
+    condition     = can(regex("^[0-9a-f]{128}$", var.gvisor_sha512))
+    error_message = "gvisor_sha512 must be 128 lower-case hexadecimal characters."
+  }
+}
+
+variable "gvisor_platform" {
+  description = "gVisor platform: systrap (no KVM needed, works on ordinary EC2 instances), or kvm (bare metal / nested virtualization only)."
+  type        = string
+
+  validation {
+    condition     = contains(["systrap", "kvm"], var.gvisor_platform)
+    error_message = "gvisor_platform must be systrap or kvm."
+  }
+}
+
 variable "tags" {
   description = "Tags added to every resource."
   type        = map(string)

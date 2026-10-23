@@ -1,0 +1,19 @@
+apiVersion: storage.k8s.io/v1
+kind: StorageClass
+metadata:
+  name: {{ required "name is required" .Values.name }}
+  {{- if .Values.default }}
+  annotations:
+    storageclass.kubernetes.io/is-default-class: "true"
+  {{- end }}
+# The EBS CSI driver (the aws-ebs-csi-driver EKS add-on), not the in-tree kubernetes.io/aws-ebs provisioner the legacy gp2 class uses.
+provisioner: ebs.csi.aws.com
+parameters:
+  type: gp3
+  encrypted: "true"
+  fsType: ext4
+# The volume is created in the zone of the node the pod is scheduled on (EBS volumes are zonal), not wherever the claim happened to be created.
+volumeBindingMode: WaitForFirstConsumer
+allowVolumeExpansion: true
+# Delete: deleting a claim deletes its EBS volume (scripts/destroy-prepare.sh deletes the claims before the cluster is destroyed).
+reclaimPolicy: Delete

@@ -5,8 +5,9 @@ A highly available platform foundation in `us-east-1`, zones `a` and `b`:
 - **Network:** one VPC (10.0.0.0/16), per zone one public and one private /24 subnet and one NAT gateway.
   Only the load balancer (and the NAT gateways) sit in the public subnets.
 - **Cluster:** EKS 1.36 with Cilium as an overlay network (no AWS VPC CNI, no kube-proxy), two Spot nodes with 16 GiB RAM,
-  CoreDNS and the EBS CSI driver.
+  CoreDNS and the EBS CSI driver. Every node also has gVisor (`runsc`) as an opt-in sandboxed runtime.
+- **Database:** a Multi-AZ RDS for PostgreSQL instance for Backstage in the private subnets, reachable only from the nodes; its password is kept (and rotated) by RDS in Secrets Manager.
 - **Front door:** an ALB, owned by Terraform, serving HTTPS for `platform-demo.click` (free ACM certificate, DNS records for each UI) and forwarding to the Gateway's port on the nodes.
 
 Everything in AWS is a Terraform resource, so `terraform destroy` leaves nothing behind that you would have to delete in the console.
-The pages: [Architecture](architecture.md), [The ALB and the Gateway](alb-and-gateway.md), [Secrets](secrets.md), [The pipeline](pipeline.md), [Operations](operations.md).
+The pages: [Architecture](architecture.md), [The ALB and the Gateway](alb-and-gateway.md), [Secrets and the database](secrets.md), [gVisor](gvisor.md), [The pipeline](pipeline.md), [Operations](operations.md).

@@ -68,8 +68,20 @@ data "aws_iam_policy_document" "plan" {
   statement {
     sid       = "NeverReadSecretValues"
     effect    = "Deny"
-    actions   = ["ssm:GetParameter", "ssm:GetParameters", "ssm:GetParametersByPath", "secretsmanager:GetSecretValue"]
+    actions   = ["secretsmanager:GetSecretValue"]
     resources = ["*"]
+  }
+
+  # The same for Parameter Store, except the platform's database connection details (<name>/rds/...): plain String parameters with no
+  # secret in them (host, port, database, user) that Terraform itself manages, so a plan has to be able to refresh them. The database
+  # password is not there; it is in Secrets Manager, which stays denied above.
+  statement {
+    sid     = "NeverReadParameterValues"
+    effect  = "Deny"
+    actions = ["ssm:GetParameter", "ssm:GetParameters", "ssm:GetParametersByPath"]
+    not_resources = [
+      "arn:${data.aws_partition.current.partition}:ssm:*:${data.aws_caller_identity.current.account_id}:parameter/${var.name}/rds/*",
+    ]
   }
 }
 

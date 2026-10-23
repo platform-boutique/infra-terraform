@@ -39,6 +39,12 @@ variable "allowed_cidrs" {
   }
 }
 
+variable "internal_cidrs" {
+  description = "Addresses inside the platform that may also reach the load balancer on ports 80 and 443: the NAT gateways' public IPs. Pods (Argo CD, Backstage) reach https://dex.<domain> through the NAT gateway and the ALB, so without them single sign-on cannot work. A list whose LENGTH is known at plan time (the values need not be)."
+  type        = list(string)
+  default     = []
+}
+
 variable "gateway_port" {
   description = "Port the Cilium Gateway listeners bind on every node (hostNetwork). The load balancer sends traffic here. Above 1023: Cilium's Envoy has no privileges for lower ports."
   type        = number

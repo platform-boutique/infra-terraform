@@ -43,6 +43,18 @@ resource "aws_vpc_security_group_ingress_rule" "https" {
   ip_protocol       = "tcp"
 }
 
+# The platform itself, through the NAT gateways (see var.internal_cidrs). count, not for_each: the addresses are known only after apply.
+resource "aws_vpc_security_group_ingress_rule" "https_internal" {
+  count = length(var.internal_cidrs)
+
+  security_group_id = aws_security_group.alb.id
+  description       = "HTTPS from the platform's own NAT gateway ${count.index}"
+  cidr_ipv4         = var.internal_cidrs[count.index]
+  from_port         = 443
+  to_port           = 443
+  ip_protocol       = "tcp"
+}
+
 # The ALB may only talk to the nodes, on the gateway port.
 resource "aws_vpc_security_group_egress_rule" "to_nodes" {
   security_group_id            = aws_security_group.alb.id
