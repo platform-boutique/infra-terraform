@@ -12,10 +12,10 @@ work; the pipeline uses its OIDC roles. Turn on MFA for that user, or use IAM Id
 1. `scripts/bootstrap.sh` (once): the state bucket, the OIDC provider and the two roles. It shows the plan and asks. Then set the
    repository variables it prints ([Pipeline](pipeline.md)).
 2. Actions -> **Foundation** (the certificate; needs the registered domain's hosted zone).
-3. Actions -> **Deploy**, read the plan on the run page, approve. About 20 minutes: network 2, control plane 10, nodes 5, add-ons 3.
+3. Actions -> **Deploy**, read the plan on the run page, approve. About 20 minutes: network 2, control plane 10, nodes 5, add-ons 3 (the database builds in parallel).
 
 Order of creation: network, control plane, Gateway API CRDs, Cilium, nodes (they become Ready because Cilium runs on them), CoreDNS,
-EBS CSI, ALB, DNS. If the node group fails to become active, look at Cilium first:
+EBS CSI, ALB, DNS. The database is created beside these (it needs only the network and the nodes' security group); Multi-AZ takes about 10 minutes. If the node group fails to become active, look at Cilium first:
 `kubectl -n kube-system get pods -l k8s-app=cilium` and `kubectl -n kube-system logs ds/cilium`.
 
 ## Working locally
@@ -47,5 +47,5 @@ run `scripts/delete-leftover-volumes.sh`. The EKS secrets key stays "scheduled f
 
 ## Costs while it runs
 
-Two NAT gateways, the EKS control plane, the ALB and two `m`-class Spot instances plus EBS volumes: about $0.35-0.40 per hour. Destroy it
+Two NAT gateways, the EKS control plane, the ALB and two `m`-class Spot instances plus EBS volumes: about $0.35-0.40 per hour, plus roughly $0.07 for the Multi-AZ database (`db.t4g.small`, two instances and gp3 storage). Destroy it
 when it is not in use; a rebuild takes about 20 minutes. Always on: the state bucket and keys (cents), the hosted zone ($0.50 a month).

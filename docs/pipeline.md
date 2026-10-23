@@ -31,7 +31,7 @@ which settings change on updates; computed by script from the plan, no values), 
 
 | Role | Who can assume it | Can do |
 |---|---|---|
-| `platform-demo-github-plan` | jobs of this repository's branches and pull requests | read the account, write the state lock and `plans/`; cannot read secret values |
+| `platform-demo-github-plan` | jobs of this repository's branches and pull requests | read the account, write the state lock and `plans/`; cannot read secret values (Parameter Store and Secrets Manager), except the database's non-secret `/platform-demo/rds/*` parameters |
 | `platform-demo-github-apply` | only a job in the `production` or `destruction` environment | administrator |
 
 The environments need a required reviewer and deploy only from `main`. Both roles are created by `stacks/bootstrap`.
@@ -50,4 +50,4 @@ Scanners fail on HIGH/CRITICAL findings. What is accepted is written down with i
 - The ALB is public by design (it admits only your address).
 - The EKS API endpoint is public and open to every address, authenticated by IAM, so that a runner and a laptop can reach it and a saved plan does not depend on either's address.
 - The apply role is an administrator: Terraform creates IAM, EKS, VPC, KMS and more, and the protection is who may assume it.
-- It is a test environment: no WAF, no access logs, no replication.
+- It is a test environment: no WAF, no access logs, no replication. The database has no deletion protection and no final snapshot, no Performance Insights and no enhanced monitoring (variables flip the first two for production).

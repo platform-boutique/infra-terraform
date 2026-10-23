@@ -6,7 +6,8 @@ nav:
   - Overview: index.md
   - Architecture: architecture.md
   - The ALB and the Gateway: alb-and-gateway.md
-  - Secrets: secrets.md
+  - Secrets and the database: secrets.md
+  - gVisor: gvisor.md
   - The pipeline: pipeline.md
   - Operations: operations.md
 theme:
