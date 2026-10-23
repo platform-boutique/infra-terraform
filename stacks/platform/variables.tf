@@ -36,12 +36,12 @@ variable "kubernetes_version" {
 }
 
 variable "cilium_version" {
-  description = "Version of the cilium/cilium Helm chart. Keep it in step with kind/up.sh of the Helm repository."
+  description = "Version of the cilium/cilium Helm chart."
   type        = string
 }
 
 variable "gateway_api_version" {
-  description = "Version of the Gateway API CRDs (standard channel). Keep it in step with kind/up.sh of the Helm repository."
+  description = "Version of the Gateway API CRDs (standard channel)."
   type        = string
 }
 
@@ -186,7 +186,7 @@ variable "gvisor_platform" {
   type        = string
 }
 
-# ---- BEGIN section: Cilium security, storage class, Argo CD bootstrap (feat/spire-and-argocd-bootstrap) --------------------------
+# ---- BEGIN section: Cilium security, storage class, Argo CD bootstrap --------------------------
 
 variable "cilium_mutual_authentication_enabled" {
   description = "Install SPIRE with Cilium and enable mutual authentication (SPIFFE). Beta, deprecated in Cilium 1.20. After the first build GitOps restarts Cilium once the SPIRE server is Ready."
@@ -214,7 +214,7 @@ variable "storage_class_name" {
 }
 
 variable "argocd_chart_version" {
-  description = "Version of the argo/argo-cd chart for the bootstrap install: the same as targetRevision in gitops/apps/application-argocd.yaml of the Helm repository. Only read when the release is created; Argo CD upgrades itself from Git afterwards."
+  description = "Version of the argo/argo-cd chart for the bootstrap install: the same as targetRevision in gitops/layers/platform/application-argocd.yaml of the Helm repository. Only read when the release is created; Argo CD upgrades itself from Git afterwards."
   type        = string
 }
 

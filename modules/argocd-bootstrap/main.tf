@@ -3,8 +3,7 @@
 # Terraform builds what has to exist before anything can be deployed from Git (network, control plane, Cilium, nodes, storage class) and
 # installs ONLY Argo CD, the root Application and the two things Git cannot carry (see below). From the moment the root Application
 # syncs, Git is the single source of truth: Argo CD re-applies its own full configuration (gitops/argocd/values.yaml: Dex single sign-on,
-# RBAC, resources ...) and manages its own upgrades through the `argocd` Application of the Helm repository, exactly as kind/up.sh
-# does locally (helm install, then the root Application).
+# RBAC, resources ...) and manages its own upgrades through the `argocd` Application of the Helm repository.
 #
 #   Terraform (this module)                              Git (platform-demo-helm, gitops/)
 #   -----------------------                              ---------------------------------
@@ -18,10 +17,10 @@
 # LoadBalancer Service and no Ingress, it is reached through the ALB and the Cilium Gateway (docs/alb-and-gateway.md).
 #
 # The cluster is brand new when this runs: no Kyverno (its policies and webhooks arrive later through Git), no External Secrets Operator,
-# no monitoring CRDs, no Gateway. Nothing in the bootstrap depends on them (no ServiceMonitor, no ExternalSecret, no policy exception).
+# no Prometheus/monitoring CRDs, no Gateway. Nothing in the bootstrap depends on them (no ServiceMonitor, no ExternalSecret, no policy exception).
 
 locals {
-  # Names that Git refers to. They are fixed on purpose and must not be changed here alone: gitops/apps/application-argocd.yaml has
+  # Names that Git refers to. They are fixed on purpose and must not be changed here alone: gitops/layers/platform/application-argocd.yaml has
   # releaseName `argocd` and destination namespace `argocd`, so the resources of the release below keep the names Argo CD will
   # re-apply them under (it adopts them instead of creating a second Argo CD next to the first one).
   argocd_namespace         = "argocd"
@@ -60,8 +59,8 @@ resource "helm_release" "prerequisites" {
 }
 
 # --- Argo CD, bootstrap only --------------------------------------------------------------------------------------------------------
-# Chart version: the one gitops/apps/application-argocd.yaml of the Helm repository pins (targetRevision) and kind/up.sh installs. Keep
-# the three in step: if they differ, the first sync of the `argocd` Application is an upgrade or downgrade of this release's resources.
+# Chart version: the one gitops/layers/platform/application-argocd.yaml of the Helm repository pins (targetRevision). Keep the two in
+# step: if they differ, the first sync of the `argocd` Application is an upgrade or downgrade of this release's resources.
 #
 # THE HAND-OVER. This release is bootstrap-only. After the root Application has synced, the Application `argocd` (releaseName argocd,
 # same chart, values from Git) re-applies every resource of this release with the full configuration. Terraform and Argo CD must not
@@ -133,8 +132,8 @@ resource "helm_release" "argocd" {
 }
 
 # --- The root Application ---------------------------------------------------------------------------------------------------------
-# The AppProject platform-admin and the Application platform-root, the same objects as gitops/bootstrap/root.yaml (which kind/up.sh
-# applies by hand). The AppProject is ALSO declared in Git (gitops/apps/appproject-platform-admin.yaml, "adopted from bootstrap/root.yaml"):
+# The AppProject platform-admin and the Application platform-root, the same objects as gitops/bootstrap/root.yaml of the Helm
+# repository. The AppProject is ALSO declared in Git (gitops/apps/appproject-platform-admin.yaml, "adopted from bootstrap/root.yaml"):
 # the copy here only lets the root Application start, the one in Git is the reviewed one; keep them identical.
 # Needs the Argo CD CRDs, hence the dependency on the (waiting) Argo CD release.
 resource "helm_release" "root" {

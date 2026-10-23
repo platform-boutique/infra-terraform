@@ -55,7 +55,7 @@ network -> eks-cluster (control plane, access entries)
                                                        Application argocd: Argo CD re-applies its OWN full values (Dex, RBAC ...)
                                                        post-sync Job: restarts Cilium once the SPIRE server is Ready
                                                        External Secrets Operator (serviceAccount.create=false, name=external-secrets)
-                                                       Kyverno and policies, Gateway and HTTPRoutes, monitoring, the shop ...
+                                                       Kyverno and policies, Gateway and HTTPRoutes, Dex, Backstage, the shop ...
 ```
 
 **What Terraform installs, and why only that.** Argo CD cannot install itself on nodes that do not exist, so the cluster, the CNI, the
@@ -73,7 +73,7 @@ Terraform out of the way:
   the first install. Change Argo CD in Git.
 - The Helm provider only compares the release record (a Secret that Argo CD never touches, because it renders the chart itself and
   applies the result), so Argo CD's changes are not drift for Terraform.
-- The chart version (`argocd_chart_version`) must equal `targetRevision` in `gitops/apps/application-argocd.yaml`, or the first sync is an
+- The chart version (`argocd_chart_version`) must equal `targetRevision` in `gitops/layers/platform/application-argocd.yaml`, or the first sync is an
   up- or downgrade.
 - The AppProject `platform-admin` exists twice on purpose: Terraform's copy lets the root Application start, the copy in Git
   (`appproject-platform-admin.yaml`) is the reviewed one. Keep them identical.
@@ -121,8 +121,8 @@ delete the volumes; `scripts/destroy-verify.sh` lists what is left. Databases on
 
 ### Mutual authentication and encryption
 
-- **SPIRE** is Cilium's own installation (`authentication.mutual.spire.install`) with the settings of `kind/cilium-values.yaml`. The
-  server runs as root, as in kind: the image's uid 1000 cannot bind the admin socket in the root-owned hostPath directory, `cilium-init`
+- **SPIRE** is Cilium's own installation (`authentication.mutual.spire.install`) with settings of its own. The
+  server runs as root: the image's uid 1000 cannot bind the admin socket in the root-owned hostPath directory, `cilium-init`
   cannot register Cilium's identities through its `/proc` (that needs the same uid or `CAP_SYS_PTRACE`), and on EKS it could not write
   the root-owned EBS volume either. The container gets no extra capabilities. The CA lives on a PVC of the explicitly named `gp3` class,
   so a restart does not change the trust domain. Cilium has deprecated this feature in 1.20 (removal announced for 1.21).

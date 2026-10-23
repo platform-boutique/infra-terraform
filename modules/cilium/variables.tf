@@ -4,12 +4,12 @@ variable "api_server_host" {
 }
 
 variable "cilium_version" {
-  description = "Version of the cilium/cilium Helm chart. Keep it in step with kind/up.sh of the Helm repository."
+  description = "Version of the cilium/cilium Helm chart."
   type        = string
 }
 
 variable "gateway_api_version" {
-  description = "Version of the Gateway API CRDs (standard channel). Keep it in step with kind/up.sh of the Helm repository."
+  description = "Version of the Gateway API CRDs (standard channel)."
   type        = string
 }
 

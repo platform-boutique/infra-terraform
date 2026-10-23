@@ -81,7 +81,7 @@ output "database_connection_parameter_path" {
   value       = module.database.connection_parameter_path
 }
 
-# ---- BEGIN section: Cilium security, storage class, Argo CD bootstrap (feat/spire-and-argocd-bootstrap) --------------------------
+# ---- BEGIN section: Cilium security, storage class, Argo CD bootstrap --------------------------
 
 output "argocd_url" {
   description = "Argo CD, reachable only through the ALB and the Gateway (it answers once Git has created the Gateway and HTTPRoute)."

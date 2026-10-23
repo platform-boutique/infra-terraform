@@ -4,7 +4,7 @@
 # would be left behind and block the VPC. Remove them first. Needs WORKING_DIRECTORY and AWS_REGION (the workflow sets both).
 #
 # What lives in the cluster, and who removes it:
-#   - everything Git deployed (Kyverno, External Secrets, monitoring, the shop, Argo CD itself ...): this script, through Argo CD,
+#   - everything Git deployed (Kyverno, External Secrets, the shop, Argo CD itself ...): this script, through Argo CD,
 #   - Cilium, the SPIRE server and its volume (Terraform's, but the volume is an EBS volume Terraform does not know): this script
 #     deletes the claim, the EBS CSI driver deletes the volume,
 #   - Argo CD's and the root Application's Helm releases, the namespaces, the StorageClass: Terraform, after this script,

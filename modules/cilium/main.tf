@@ -1,7 +1,7 @@
 # Cilium as the cluster's CNI, as an overlay (VXLAN), without kube-proxy, serving the Gateway API on the nodes' network.
 #
 # Why this lives in Terraform and not in Argo CD: nodes do not become Ready without a CNI, and Argo CD needs nodes. Cilium is the
-# one piece of cluster software that has to exist before anything else (the same reason kind/up.sh installs it before Argo CD).
+# one piece of cluster software that has to exist before anything else (Argo CD is installed after it).
 
 # --- Gateway API CRDs --------------------------------------------------------------------------------------------------------
 # They must exist before Cilium starts, or its Gateway controller stays off. The release asset is kept in charts/gateway-api-crds
@@ -23,7 +23,7 @@ resource "helm_release" "gateway_api_crds" {
 
 # --- Optional features, each behind a variable -------------------------------------------------------------------------------
 locals {
-  # Mutual authentication (SPIFFE/SPIRE), the same settings as kind/cilium-values.yaml of the Helm repository. Beta, and deprecated
+  # Mutual authentication (SPIFFE/SPIRE), the settings the platform's policies are written against. Beta, and deprecated
   # by Cilium 1.20 (removal announced for 1.21): the pinned chart still ships it, and it is what the platform's policies are written
   # against. Cilium installs its own SPIRE server (StatefulSet) and agents (DaemonSet) in the namespace cilium-spire.
   #
@@ -50,7 +50,7 @@ locals {
                 storageClass = var.spire_storage_class_name
               }
 
-              # Same workaround as kind/cilium-values.yaml: the SPIRE image defaults to uid 1000, which breaks the chart on EKS too:
+              # Workaround: the SPIRE image defaults to uid 1000, which breaks the chart on EKS too:
               #  1. the hostPath directory for the admin socket (DirectoryOrCreate) is created root:root 0755 by the kubelet, so
               #     uid 1000 cannot bind the socket ("bind: permission denied"; SPIRE then hangs instead of exiting),
               #  2. the cilium-init sidecar registers Cilium's identities through /proc/<pid>/root of the server process, which
