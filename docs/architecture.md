@@ -8,7 +8,7 @@ Three Terraform projects with separate state, split by how long their contents l
 |---|---|---|---|
 | `stacks/bootstrap` | state bucket and its KMS key, GitHub OIDC provider, the plan and apply roles | forever | a person, with `scripts/bootstrap.sh` (the pipeline's own roles live here) |
 | `stacks/foundation` | the ACM certificate for the domain | forever | the Foundation workflow |
-| `stacks/platform` | network, EKS, Cilium, nodes, ALB, DNS records, the External Secrets role | hours, then destroyed | the Deploy and Destroy workflows |
+| `stacks/platform` | network, EKS, Cilium, nodes, ALB, DNS records, the database, the External Secrets role | hours, then destroyed | the Deploy and Destroy workflows |
 
 A destroy of the platform therefore cannot touch the certificate, the hosted zone, the state or the roles. Every value of the
 environment is in `stacks/<stack>/<stack>.auto.tfvars`; modules have no environment defaults, so there is one place to change a size,
@@ -56,6 +56,13 @@ both private subnets. Instance types (all 4 vCPU / 16 GiB): m6i, m6a, m5, m5a, m
 and available. Session Manager (no SSH) gives a shell. A Spot interruption replaces the node; the ALB registration follows
 automatically, because the target group is attached to the Auto Scaling group.
 
+**Hardening.** The instance metadata service requires IMDSv2 with a hop limit of 1, so a pod cannot reach the node role's credentials
+(the node's own processes still can). Pods that need AWS use IAM roles for service accounts (the EBS CSI driver, the External Secrets
+role); Cilium and the Gateway run in the host network and are not affected. The EBS CSI driver may log that it cannot reach the
+metadata service and falls back to the Kubernetes API for the node's zone and instance ID; it still works. The root volume is encrypted
+(gp3, the account's default EBS key). Every node also gets a second container runtime, gVisor, installed and checksum-verified at boot:
+[gVisor](gvisor.md).
+
 Pod limit: the AWS AMI derives it from the instance's network interfaces (58 on `m5.xlarge`). It is not needed for Cilium's overlay;
 raise it with a kubelet setting if the cluster ever runs out of pod slots.
 
@@ -65,3 +72,23 @@ EKS access entries, no `aws-auth` ConfigMap. Cluster-admin: the apply role (`adm
 `admin_user_names`; the identity that creates the cluster gets nothing extra, so a laptop and the pipeline build the same cluster. The plan role may only read (Terraform refreshes the Helm releases, which live in Secrets). The public API endpoint
 is open to every address (`api_allowed_cidrs`) and every request is authenticated by IAM; the private endpoint is on for the nodes.
 Secrets are encrypted with a customer-managed KMS key. The control plane logs (all five types) go to CloudWatch for 30 days.
+
+## Database
+
+Backstage's catalog lives in a **Multi-AZ RDS for PostgreSQL** instance (not Aurora), `modules/database`, `<name>-backstage`.
+
+| Setting | Value | Why |
+|---|---|---|
+| Engine | PostgreSQL 17 (`17.11`), minor upgrades automatic | the newest 17.x RDS offers; later minors are applied in the maintenance window |
+| Instance, storage | `db.t4g.small`, gp3 20 GiB growing to 50, encrypted with a customer-managed KMS key | small and cheap; the same key encrypts the backups and the master password secret |
+| Availability | Multi-AZ: a synchronous standby in the second zone, automatic failover | survives the loss of a zone |
+| Network | DB subnet group on the private subnets, not public; 5432 only from the **nodes' security group** | pods use the Cilium overlay and leave through the node, so the node security group is the source |
+| TLS | required (`rds.force_ssl = 1` in the parameter group) | clients use `sslmode=require` or stricter |
+| Backups, logs | 7 days of automated backups with point-in-time recovery; the `postgresql` log exported to CloudWatch (30 days) | |
+| Authentication | master user `backstage`, password generated and kept by RDS in Secrets Manager; IAM database authentication on | the password never reaches the state |
+| Off | Performance Insights, enhanced monitoring | cost; accepted risks are written next to the resources (inline `#checkov:skip`) |
+
+The environment is ephemeral and destroyed on purpose, so `database_deletion_protection = false` and `database_skip_final_snapshot = true`
+in `platform.auto.tfvars`. **A production environment sets `database_deletion_protection = true` and `database_skip_final_snapshot = false`**
+(the final snapshot is then named `<name>-backstage-final`; delete or rename it before recreating the database with the same name). How the
+cluster gets the connection details and the password: [Secrets and the database](secrets.md).

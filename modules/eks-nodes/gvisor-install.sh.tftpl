@@ -1,0 +1,57 @@
+#!/bin/bash
+# Installs gVisor (runsc and containerd-shim-runsc-v1) on this node. Rendered by Terraform (modules/eks-nodes) and run once by
+# cloud-init at every boot of a node: the nodes are Spot instances and are replaced often, so nothing is baked into an image.
+#
+# The release is pinned (gvisor_release) and the tarball is checked against the SHA-512 that is written in platform.auto.tfvars
+# (gvisor_sha512, the value gVisor publishes next to the tarball). On any mismatch the script stops BEFORE anything is installed, so a
+# tampered or truncated download can never become a runtime: cloud-init reports the failure (/var/log/cloud-init-output.log) and the
+# node simply has no runsc, which makes a pod that asks for the gvisor RuntimeClass fail loudly instead of running unsandboxed.
+#
+# The containerd side (the runtime handler named runsc) is the NodeConfig part next to this script; nodeadm writes it into
+# /etc/containerd/config.toml. containerd looks for the shim only when a sandboxed pod starts, so the order of the two does not matter.
+set -euo pipefail
+
+release="${release}"
+expected_sha512="${sha512}"
+url="https://storage.googleapis.com/gvisor/releases/release/$release/x86_64/gvisor.tar.bz2"
+marker="/usr/local/bin/.gvisor-release"
+
+if [ -f "$marker" ] && [ "$(cat "$marker")" = "$release" ]; then
+  echo "gVisor $release is already installed."
+  exit 0
+fi
+
+work="$(mktemp -d)"
+trap 'rm -rf "$work"' EXIT
+
+# tar needs the bzip2 program for .bz2 (the zstd tarball would need zstd instead); small, and absent from some images.
+command -v bzip2 > /dev/null || dnf -y install bzip2
+
+curl --fail --silent --show-error --location --retry 5 --retry-delay 3 --retry-all-errors --output "$work/gvisor.tar.bz2" "$url"
+
+# Verify before extracting a single byte. --strict also rejects a malformed checksum line.
+echo "$expected_sha512  $work/gvisor.tar.bz2" | sha512sum --check --strict -
+
+mkdir "$work/extracted"
+tar -xjf "$work/gvisor.tar.bz2" -C "$work/extracted"
+
+# The release is a runsc launcher, the containerd shim and gvisor-bin/ (helper programs runsc starts). gvisor-bin must sit next to
+# runsc. containerd finds the shim in PATH; /usr/local/bin is in the PATH of the containerd service.
+install -d -m 0755 /usr/local/bin/gvisor-bin
+install -m 0755 "$work"/extracted/gvisor-bin/* /usr/local/bin/gvisor-bin/
+install -m 0755 "$work/extracted/runsc" /usr/local/bin/runsc
+install -m 0755 "$work/extracted/containerd-shim-runsc-v1" /usr/local/bin/containerd-shim-runsc-v1
+
+# Settings of the containerd shim (ConfigPath in the containerd config). flag = "value" becomes --flag=value for runsc.
+#   platform       systrap needs neither KVM nor nested virtualization, so it works on ordinary (non-metal) EC2 instances. It is
+#                  also gVisor's default; it is written down so that a change of the default cannot switch the nodes to KVM.
+#   systemd-cgroup the kubelet and containerd use the systemd cgroup driver on Amazon Linux 2023, so runsc must too.
+install -d -m 0755 /etc/containerd
+cat > /etc/containerd/runsc.toml << 'TOML'
+[runsc_config]
+  platform = "${platform}"
+  systemd-cgroup = "true"
+TOML
+
+/usr/local/bin/runsc --version
+echo "$release" > "$marker"

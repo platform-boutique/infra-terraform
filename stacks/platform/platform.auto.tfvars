@@ -40,3 +40,26 @@ node_disk_size_gib  = 100
 gateway_port = 8080
 
 secrets_parameter_prefix = "/platform-demo"
+
+# ----------------------------------------------------------------------------------------------------------------------------------
+# The database: Multi-AZ RDS for PostgreSQL (not Aurora) for Backstage, in the private subnets, reachable only from the nodes.
+# The environment is ephemeral and destroyed on purpose, so it has no deletion protection and takes no final snapshot. A production
+# environment sets database_deletion_protection = true and database_skip_final_snapshot = false (docs/secrets.md).
+database_engine_version            = "17.11"
+database_instance_class            = "db.t4g.small"
+database_allocated_storage_gib     = 20
+database_max_allocated_storage_gib = 50
+database_name                      = "backstage"
+database_username                  = "backstage"
+database_backup_retention_days     = 7
+database_deletion_protection       = false
+database_skip_final_snapshot       = true
+
+# ----------------------------------------------------------------------------------------------------------------------------------
+# gVisor on every node (docs/gvisor.md). The release is pinned; the node verifies the SHA-512 gVisor publishes next to the tarball
+# (https://storage.googleapis.com/gvisor/releases/release/<release>/x86_64/gvisor.tar.bz2.sha512) and refuses a download that differs.
+# To update: pick a release, download its .sha512 file, compare it with the tarball, and change both values together.
+# systrap works on ordinary (non-metal) EC2 instances; kvm would need bare metal.
+gvisor_release  = "20261019.0"
+gvisor_sha512   = "7cbc2aeeee809dcccfb40e612504a1b76f2c119790cee59e482f7b35428cccc4f71705e7e322442d07d1f7d29b5d9e72e31319fc3088d6dcbec9fc7c1f0d8881"
+gvisor_platform = "systrap"
