@@ -24,6 +24,7 @@ locals {
 # One key for the volume, the automated backups and the master user secret. The default key policy delegates to IAM, so the External
 # Secrets role (modules/secrets-access) gets kms:Decrypt through its own IAM policy, restricted to Secrets Manager.
 resource "aws_kms_key" "this" {
+  #checkov:skip=CKV2_AWS_64:The default key policy is intended: it delegates to IAM (account root), and the only other principals (the RDS service, the External Secrets role) get access through their own IAM policies, scoped by kms:ViaService.
   description             = "${var.identifier} database: storage, backups and master user secret"
   enable_key_rotation     = true
   deletion_window_in_days = 7
@@ -186,6 +187,7 @@ locals {
 }
 
 resource "aws_ssm_parameter" "connection" {
+  #checkov:skip=CKV2_AWS_34:Host, port, database name and user name are not secret (the password lives only in the RDS-managed Secrets Manager secret); a String parameter keeps them readable by the plan role.
   for_each = toset(["host", "port", "database", "username"])
 
   name        = "${var.connection_parameter_path}/${each.key}"
