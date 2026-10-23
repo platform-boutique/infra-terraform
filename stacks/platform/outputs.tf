@@ -47,3 +47,35 @@ output "secrets_parameter_prefix" {
   description = "Parameter Store path the External Secrets Operator may read."
   value       = module.secrets_access.parameter_prefix
 }
+
+# ---- BEGIN section: Cilium security, storage class, Argo CD bootstrap (feat/spire-and-argocd-bootstrap) --------------------------
+
+output "argocd_url" {
+  description = "Argo CD, reachable only through the ALB and the Gateway (it answers once Git has created the Gateway and HTTPRoute)."
+  value       = "https://${local.argocd_hostname}"
+}
+
+output "argocd_initial_access" {
+  description = "How a person first gets into Argo CD, and the break-glass path."
+  value       = <<-EOT
+    Normal: https://${local.argocd_hostname} -> "Log in via Dex" (GitHub). Needs Dex, the External Secrets Operator and the GitHub OAuth App secrets in Parameter Store (docs/secrets.md).
+    There is no admin account (argocd_admin_enabled = ${var.argocd_admin_enabled}; Git switches it off anyway).
+    Break-glass, with no password and no Dex (your IAM identity must be a cluster admin, see admin_user_names):
+      aws eks update-kubeconfig --name ${module.eks_cluster.name} --region ${var.region}
+      kubectl config set-context --current --namespace=argocd
+      argocd app list --core          # the CLI talks to the Kubernetes API directly, as you
+    Details: docs/operations.md, "Getting into Argo CD".
+  EOT
+}
+
+output "storage_class_name" {
+  description = "The default StorageClass created by Terraform."
+  value       = module.storage_class.name
+}
+
+output "external_secrets_service_account" {
+  description = "namespace/name of the pre-created, IAM-annotated External Secrets service account (the chart in Git must use it with serviceAccount.create=false)."
+  value       = "${module.argocd_bootstrap.external_secrets_namespace}/${module.argocd_bootstrap.external_secrets_service_account}"
+}
+
+# ---- END section ------------------------------------------------------------------------------------------------------------------

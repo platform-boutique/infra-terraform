@@ -40,3 +40,30 @@ node_disk_size_gib  = 100
 gateway_port = 8080
 
 secrets_parameter_prefix = "/platform-demo"
+
+# ---- BEGIN section: Cilium security, storage class, Argo CD bootstrap (feat/spire-and-argocd-bootstrap) ------------------------------
+
+# Cilium: SPIFFE/SPIRE mutual authentication (beta; GitOps restarts Cilium once the SPIRE server is Ready) and WireGuard encryption.
+# If the first Deploy leaves the nodes NotReady, set cilium_encryption_enabled = false first (kernel without WireGuard), then
+# cilium_mutual_authentication_enabled = false, and see docs/architecture.md.
+cilium_mutual_authentication_enabled = true
+spire_data_size                      = "1Gi"
+cilium_encryption_enabled            = true
+cilium_node_encryption_enabled       = true
+
+# The default StorageClass (encrypted gp3). EKS's own gp2 stops being the default.
+storage_class_name = "gp3"
+
+# Argo CD is installed once by Terraform with minimal values, then manages itself from Git. Keep the chart version equal to the one in
+# gitops/apps/application-argocd.yaml of the Helm repository. No admin account: sign in with GitHub through Dex; `argocd --core` is break-glass.
+argocd_chart_version = "10.10.0"
+argocd_admin_enabled = false
+
+# The root Application: where Git takes over. The External Secrets service account is created here (it carries the IAM role's ARN, which
+# must never be in Git); the External Secrets chart in Git uses it with serviceAccount.create=false and name=external-secrets.
+gitops_repo_url                  = "https://github.com/platform-boutique/platform-demo-helm.git"
+gitops_revision                  = "main"
+gitops_path                      = "gitops/apps"
+external_secrets_service_account = "external-secrets/external-secrets"
+
+# ---- END section ------------------------------------------------------------------------------------------------------------------
