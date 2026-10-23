@@ -23,6 +23,18 @@ variable "parameter_prefix" {
   }
 }
 
+variable "secret_arns" {
+  description = "ARNs of Secrets Manager secrets (not Parameter Store) the role may also read, for example the master user secret RDS manages. Exact ARNs only; read-only."
+  type        = list(string)
+  default     = []
+}
+
+variable "secret_kms_key_arns" {
+  description = "ARNs of the customer-managed KMS keys those secrets are encrypted with: the role may decrypt with them, through Secrets Manager only."
+  type        = list(string)
+  default     = []
+}
+
 variable "service_account" {
   description = "Kubernetes service account that may assume the role, as namespace/name (the External Secrets Operator's)."
   type        = string
