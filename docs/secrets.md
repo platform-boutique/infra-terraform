@@ -27,9 +27,12 @@ it. Created in the console, the value never touches Git or the state, and it sur
 ## How the cluster gets them
 
 `module.secrets_access` creates an IAM role, `<cluster>-external-secrets`, that may read **only** `/platform-demo/*` (and decrypt through
-Systems Manager). The External Secrets Operator, installed through GitOps with its service account annotated with that role
-(`terraform output external_secrets_role_arn`), turns the parameters into the Kubernetes Secrets the charts expect
-(`sso/dex-secrets`, `backstage/backstage-secrets`).
+Systems Manager). The External Secrets Operator is installed through GitOps, but its **service account is created by Terraform**
+(`modules/argocd-bootstrap`): `external-secrets/external-secrets`, annotated with that role (`terraform output external_secrets_role_arn`).
+The role's ARN contains the AWS account id, which a public Git repository must never hold, so the operator's chart in Git runs with
+`serviceAccount.create=false` and `serviceAccount.name=external-secrets`, in the namespace `external-secrets` (which Terraform also creates, with
+Pod Security `baseline`). The operator turns the parameters into the Kubernetes Secrets the charts expect (`sso/dex-secrets`,
+`backstage/backstage-secrets`).
 
 The role's prefix is `secrets_parameter_prefix` in `platform.auto.tfvars` (`/platform-demo`). The GitHub OAuth App's callback URL is the HTTPS address
 Dex is served on: **`https://dex.platform-demo.click/callback`** (see [the ALB and the Gateway](alb-and-gateway.md)).

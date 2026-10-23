@@ -13,7 +13,7 @@ internet --:443--> ALB (TLS ends here; port 80 redirects; public /24 subnets, 2 
 | `stacks/bootstrap` | What everything stands on, never destroyed: the state bucket and GitHub's OIDC provider with the pipeline's two roles. Applied by a person with `scripts/bootstrap.sh`. |
 | `stacks/foundation` | What outlives the platform: the ACM certificate for the domain. |
 | `stacks/platform` | The platform: composes the modules below. Built and destroyed through the pipeline. |
-| `modules/` | `network`, `eks-cluster`, `cilium`, `eks-nodes`, `alb`, `certificate`, `dns`, `secrets-access` (each explained in [Architecture](docs/architecture.md)). |
+| `modules/` | `network`, `eks-cluster`, `cilium` (SPIRE, WireGuard), `eks-nodes`, `storage-class` (default gp3), `argocd-bootstrap` (Argo CD, root Application; Git takes over), `alb`, `certificate`, `dns`, `secrets-access` (each explained in [Architecture](docs/architecture.md)). |
 | `scripts/` | `bootstrap.sh`, `state-bucket.sh`, the destroy helpers, `update-gateway-api-crds.sh`. |
 | `docs/` | The documentation, rendered in the developer portal. |
 
