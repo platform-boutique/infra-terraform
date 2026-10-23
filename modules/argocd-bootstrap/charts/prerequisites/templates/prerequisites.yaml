@@ -1,5 +1,5 @@
 # Pod Security: enforce baseline, warn on what would not pass restricted. Same labels as managedNamespaceMetadata of the Argo CD
-# Application in the Helm repository (gitops/apps/application-argocd.yaml), so nothing changes when Git takes the namespace over.
+# Application in the Helm repository (gitops/layers/platform/application-argocd.yaml), so nothing changes when Git takes the namespace over.
 apiVersion: v1
 kind: Namespace
 metadata:

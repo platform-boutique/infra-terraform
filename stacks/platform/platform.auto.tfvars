@@ -64,7 +64,7 @@ gvisor_release  = "20261019.0"
 gvisor_sha512   = "7cbc2aeeee809dcccfb40e612504a1b76f2c119790cee59e482f7b35428cccc4f71705e7e322442d07d1f7d29b5d9e72e31319fc3088d6dcbec9fc7c1f0d8881"
 gvisor_platform = "systrap"
 
-# ---- BEGIN section: Cilium security, storage class, Argo CD bootstrap (feat/spire-and-argocd-bootstrap) ------------------------------
+# ---- BEGIN section: Cilium security, storage class, Argo CD bootstrap ------------------------------
 
 # Cilium: SPIFFE/SPIRE mutual authentication (beta; GitOps restarts Cilium once the SPIRE server is Ready) and WireGuard encryption.
 # If the first Deploy leaves the nodes NotReady, set cilium_encryption_enabled = false first (kernel without WireGuard), then
@@ -78,7 +78,7 @@ cilium_node_encryption_enabled       = true
 storage_class_name = "gp3"
 
 # Argo CD is installed once by Terraform with minimal values, then manages itself from Git. Keep the chart version equal to the one in
-# gitops/apps/application-argocd.yaml of the Helm repository. No admin account: sign in with GitHub through Dex; `argocd --core` is break-glass.
+# gitops/layers/platform/application-argocd.yaml of the Helm repository. No admin account: sign in with GitHub through Dex; `argocd --core` is break-glass.
 argocd_chart_version = "10.10.0"
 argocd_admin_enabled = false
 

@@ -79,7 +79,7 @@ Your user gets cluster-admin if it is listed in `admin_user_names` in `platform.
 - **Gateway API version:** `scripts/update-gateway-api-crds.sh vX.Y.Z`, then put the printed version and checksum in the tfvars.
 - **Argo CD itself, or anything Git deploys:** change the Helm repository, not Terraform. The Argo CD release of Terraform is bootstrap-only
   (`ignore_changes` on its values and version), so `argocd_chart_version` is only read on a new cluster; keep it equal to the version in
-  `gitops/apps/application-argocd.yaml`. Where the root Application points (`gitops_repo_url`, `gitops_revision`, `gitops_path`) is Terraform's.
+  `gitops/layers/platform/application-argocd.yaml`. Where the root Application points (`gitops_repo_url`, `gitops_revision`, `gitops_path`) is Terraform's.
 - **Turning off WireGuard / SPIRE:** `cilium_encryption_enabled`, `cilium_node_encryption_enabled`, `cilium_mutual_authentication_enabled`
   in the tfvars. Cilium's pods roll; with encryption on a running cluster expect a short interruption of cross-node traffic.
 - **Providers:** Dependabot proposes updates to the lock files; the exact versions are in each stack's `versions.tf`.
@@ -89,7 +89,7 @@ Your user gets cluster-admin if it is listed in `admin_user_names` in `platform.
 Actions -> **Destroy** (reason, type `destroy platform-demo`), read the list on the run page, approve.
 The workflow empties the cluster first (`scripts/destroy-prepare.sh`), destroys, and lists what is left on the run page. Emptying means,
 in this order: the root Application and the self-managing `argocd` Application lose their finalizers (so Argo CD does not prune itself),
-the ApplicationSets and then all Applications are deleted and Argo CD prunes what it deployed (Kyverno, External Secrets, monitoring,
+the ApplicationSets and then all Applications are deleted and Argo CD prunes what it deployed (Kyverno, External Secrets,
 the shop and their PersistentVolumeClaims); Kyverno's webhooks and stuck External Secrets objects are removed; the SPIRE server is stopped; every
 remaining PersistentVolumeClaim is deleted and the script waits for the EBS CSI driver to delete the volumes behind them (the `gp3`
 class reclaims with `Delete`); Services of type LoadBalancer, if any, are deleted. Every step has a time limit and falls back to removing

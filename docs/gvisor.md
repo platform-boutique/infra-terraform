@@ -94,8 +94,9 @@ working. gVisor runs its own network stack in front of that interface, which has
   the veth instead. That is expected to work; verify it with a Service call from a sandboxed pod (below).
 - The Cilium agent, the operator and the Gateway are not sandboxed (see the table above), so nothing about Cilium itself changes.
 
-Mutual authentication (SPIFFE/SPIRE) is not enabled, so there is no SPIRE agent interaction to consider; when it is enabled, remember that
-the SPIRE agent itself cannot be sandboxed.
+Mutual authentication (SPIFFE/SPIRE) is enabled (`cilium_mutual_authentication_enabled`), so remember that the SPIRE agent itself cannot be
+sandboxed; it runs on the host like the Cilium agent. Sandboxed pods get their identity from Cilium on the node side, but this combination
+is untested until the first Deploy.
 
 ## Spot nodes
 

@@ -195,7 +195,7 @@ module "database" {
 }
 
 # ==================================================================================================================================
-# BEGIN section: storage class and Argo CD bootstrap (feat/spire-and-argocd-bootstrap). Appended at the end on purpose.
+# BEGIN section: storage class and Argo CD bootstrap.
 # Order: eks_cluster -> cilium -> eks_nodes -> storage_class -> argocd_bootstrap, then Git (Argo CD) takes over.
 # ==================================================================================================================================
 

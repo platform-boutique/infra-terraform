@@ -1,5 +1,5 @@
 variable "argocd_chart_version" {
-  description = "Version of the argo/argo-cd Helm chart used for the bootstrap install. Keep it equal to targetRevision in gitops/apps/application-argocd.yaml of the Helm repository (and ARGOCD_CHART_VERSION in kind/up.sh). Only used when the release is created: Argo CD upgrades itself from Git afterwards."
+  description = "Version of the argo/argo-cd Helm chart used for the bootstrap install. Keep it equal to targetRevision in gitops/layers/platform/application-argocd.yaml of the Helm repository. Only used when the release is created: Argo CD upgrades itself from Git afterwards."
   type        = string
 }
 
