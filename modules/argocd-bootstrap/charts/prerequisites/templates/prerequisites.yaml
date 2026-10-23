@@ -1,0 +1,27 @@
+# Pod Security: enforce baseline, warn on what would not pass restricted. Same labels as managedNamespaceMetadata of the Argo CD
+# Application in the Helm repository (gitops/apps/application-argocd.yaml), so nothing changes when Git takes the namespace over.
+apiVersion: v1
+kind: Namespace
+metadata:
+  name: {{ required "argocd.namespace is required" .Values.argocd.namespace }}
+  labels:
+    pod-security.kubernetes.io/enforce: baseline
+    pod-security.kubernetes.io/warn: restricted
+---
+apiVersion: v1
+kind: Namespace
+metadata:
+  name: {{ required "externalSecrets.namespace is required" .Values.externalSecrets.namespace }}
+  labels:
+    pod-security.kubernetes.io/enforce: baseline
+    pod-security.kubernetes.io/warn: restricted
+---
+# The External Secrets Operator (installed by Argo CD with serviceAccount.create=false and this name) runs as this account. IAM roles
+# for service accounts: the pod gets credentials for the role that may read /platform-demo/* in Parameter Store and nothing else.
+apiVersion: v1
+kind: ServiceAccount
+metadata:
+  name: {{ required "externalSecrets.serviceAccount is required" .Values.externalSecrets.serviceAccount }}
+  namespace: {{ .Values.externalSecrets.namespace }}
+  annotations:
+    eks.amazonaws.com/role-arn: {{ required "externalSecrets.roleArn is required" .Values.externalSecrets.roleArn | quote }}

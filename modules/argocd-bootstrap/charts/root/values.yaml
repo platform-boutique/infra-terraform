@@ -1,0 +1,6 @@
+# Set by Terraform (modules/argocd-bootstrap); only the shape of the values.
+namespace: argocd
+repoURL: https://github.com/platform-boutique/platform-demo-helm.git
+revision: main
+path: gitops/apps
+argoHelmRepoURL: https://argoproj.github.io/argo-helm
